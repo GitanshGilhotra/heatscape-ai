@@ -1,0 +1,27 @@
+# Python FastAPI ML Service Git Ignore
+
+# Environment Files (Secrets)
+.env
+.env.*
+!.env.example
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Data & Model Binaries (If generated dynamically)
+*.pkl
+*.joblib
+.pytest_cache/
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/
