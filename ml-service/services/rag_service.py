@@ -71,8 +71,27 @@ def process_rag_query(query: str, chat_history: list = None, gemini_key: str = N
     LangChain RAG Query Orchestration:
     User Query + Chat History -> Vector Retrieval (Qdrant) -> Context Assembly -> Gemini AI / Built-in Grounded Engine
     """
+    clean_q = query.lower().translate(str.maketrans('', '', '?,!.')).strip()
+    greeting_words = {"hi", "hello", "hey", "greetings", "namaste", "hola", "good morning", "good evening"}
+    query_tokens = set(clean_q.split())
+
     retrieved_docs = search_vector_memory(query)
     context_str = "\n".join([f"- [{doc['topic']}]: {doc['content']}" for doc in retrieved_docs])
+
+    # Direct Greeting Intent Recognition
+    if clean_q in greeting_words or (len(query_tokens) <= 3 and query_tokens.intersection({"hi", "hello", "hey", "greetings"})):
+        return {
+            "query": query,
+            "answer": "Hello! I am HEATSCAPE AI, your urban climate assistant. How can I help you analyze Land Surface Temperatures (LST), tree canopy placement, or cooling interventions today?",
+            "recommendation": "Select a sample prompt below or ask about a specific city zone (e.g., 'Why is Zone 18 so hot?').",
+            "confidence": "HEATSCAPE Assistant Core",
+            "retrieved_context": retrieved_docs,
+            "pipeline_nodes": [
+                {"node": "User Greeting Intent", "status": "COMPLETED"},
+                {"node": "LangChain Orchestrator", "status": "COMPLETED"},
+                {"node": "Conversational Response", "status": "COMPLETED"}
+            ]
+        }
 
     # Format Chat History for Conversational Memory
     history_turns = []
