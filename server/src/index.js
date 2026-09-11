@@ -28,6 +28,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[HEATSCAPE SERVER] Node.js Express server running on port ${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[HEATSCAPE SERVER ERROR] Port ${PORT} is already in use by another process.`);
+    console.error(`To kill the process occupying port 5000 on Windows, run:\n   npx kill-port 5000\nOR in PowerShell:\n   Stop-Process -Name node -Force\n`);
+    process.exit(1);
+  } else {
+    console.error('[HEATSCAPE SERVER ERROR]', err);
+  }
 });
