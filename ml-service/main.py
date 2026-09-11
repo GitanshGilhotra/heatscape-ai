@@ -45,6 +45,7 @@ class SimulateRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    chat_history: Optional[list] = None
     gemini_key: Optional[str] = None
 
 @app.get("/health")
@@ -107,7 +108,7 @@ def simulate_scenario(req: SimulateRequest):
 @app.post("/chat")
 def chat_ai_planner(req: ChatRequest):
     try:
-        res = process_rag_query(req.message, gemini_key=req.gemini_key)
+        res = process_rag_query(req.message, chat_history=req.chat_history, gemini_key=req.gemini_key)
         return {"success": True, "data": res}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
