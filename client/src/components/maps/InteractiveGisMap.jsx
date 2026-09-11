@@ -118,7 +118,7 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
     ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
     : (mapMode === "osm" 
         ? "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        : "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png");
+        : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}");
 
 
   return (
@@ -193,7 +193,7 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
       >
         <ChangeMapView center={selectedCity.center} zoom={selectedCity.zoom} />
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a> &amp; Landsat-8 GIS'
+          attribution='&copy; <a href="https://www.esri.com/">Esri</a> &amp; Landsat-8 GIS'
           url={tileUrl}
         />
 
