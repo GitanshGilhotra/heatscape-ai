@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, Sparkles, Bot, User, Database, ShieldAlert, CheckCircle2, ArrowRight } from 'lucide-react';
 
-export function AiUrbanPlannerChat() {
+export function AiUrbanPlannerChat({ activeCity }) {
+  const cityName = activeCity?.name || "New Delhi";
+
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: 'Greetings. I am the HEATSCAPE AI Urban Planning Assistant powered by Qdrant vector retrieval and LangChain orchestration. Ask me anything about urban microclimates, tree canopy placement, or Land Surface Temperature mitigation.',
+      text: `Greetings. I am the HEATSCAPE AI Urban Planning Assistant powered by Qdrant vector retrieval and LangChain orchestration. Currently analyzing target megacity ${cityName}. Ask me anything about urban microclimates, tree canopy placement, or Land Surface Temperature mitigation.`,
       card: {
-        analysis: 'System standing by. Connected to Landsat-8 telemetry and microclimate knowledge base.',
-        recommendation: 'Select a sample query below or type a custom urban heat question.',
+        analysis: `System standing by for ${cityName}. Connected to Landsat-8 telemetry and microclimate knowledge base.`,
+        recommendation: `Select a sample query below or ask a custom question about ${cityName}.`,
         confidence: 'System Online',
         sources: ['Qdrant Vector DB', 'Landsat-8 LST']
       }
@@ -19,8 +21,8 @@ export function AiUrbanPlannerChat() {
   const chatEndRef = useRef(null);
 
   const sampleQueries = [
-    "Why is Zone 18 so hot?",
-    "Which area should receive trees first?",
+    `Why is ${cityName} so hot?`,
+    `Which area in ${cityName} should receive trees first?`,
     "Which intervention is best for dense commercial cores?",
     "Compare green roofs vs cool pavements."
   ];
@@ -46,7 +48,8 @@ export function AiUrbanPlannerChat() {
         body: JSON.stringify({
           message: query,
           chat_history: historyPayload,
-          gemini_key: geminiKey
+          gemini_key: geminiKey,
+          city: cityName
         })
       });
       const json = await res.json();
@@ -72,24 +75,24 @@ export function AiUrbanPlannerChat() {
       let botSources = ["Qdrant Microclimate Memory", "Landsat-8 LST Engine"];
 
       if (qLower.includes("hello") || qLower.includes("hi") || qLower.includes("hey") || qLower.includes("greetings")) {
-        botAnswer = "Hello! I am HEATSCAPE AI, your urban climate planning assistant. How can I help you analyze Land Surface Temperatures, tree canopy placement, or cooling interventions today?";
-        botRec = "Select a sample prompt below or ask about a specific city zone (e.g., 'Why is Zone 18 so hot?').";
+        botAnswer = `Hello! I am HEATSCAPE AI, your urban climate planning assistant. Currently focusing on ${cityName}. How can I help you analyze Land Surface Temperatures, tree canopy placement, or cooling interventions today?`;
+        botRec = `Select a sample prompt below or ask about specific thermal zones in ${cityName}.`;
         botSources = ["HEATSCAPE Assistant Core"];
       } else if (qLower.includes("tree") || qLower.includes("canopy") || qLower.includes("plant") || qLower.includes("forest")) {
-        botAnswer = "Urban tree canopy expansion is the most effective long-term cooling strategy. Transpiration from broadleaf trees provides up to 4.5°C localized air temperature reduction.";
-        botRec = "Deploy native high-transpiration species along major transportation corridors and park perimeter buffers.";
+        botAnswer = `Urban tree canopy expansion in ${cityName} is the most effective long-term cooling strategy. Transpiration from broadleaf trees provides up to 4.5°C localized air temperature reduction.`;
+        botRec = `Deploy native high-transpiration species along major transportation corridors and park perimeter buffers in ${cityName}.`;
         botSources = ["Qdrant Tree Canopy Index", "Landsat-8 NDVI Engine"];
       } else if (qLower.includes("roof") || qLower.includes("building") || qLower.includes("sedum")) {
-        botAnswer = "Extensive Sedum green roofs (10-15cm substrate) isolate thermal building mass and reduce rooftop temperatures by up to 25°C compared to conventional black asphalt.";
-        botRec = "Target flat commercial and industrial rooftops with green roof retrofits combined with Solar Reflectance Index (SRI) >= 78 coatings.";
+        botAnswer = `Extensive Sedum green roofs in ${cityName} isolate thermal building mass and reduce rooftop temperatures by up to 25°C compared to conventional black asphalt.`;
+        botRec = `Target flat commercial and industrial rooftops in ${cityName} with green roof retrofits combined with Solar Reflectance Index (SRI) >= 78 coatings.`;
         botSources = ["Qdrant Sedum Roof Index", "Building Mass Models"];
       } else if (qLower.includes("pavement") || qLower.includes("road") || qLower.includes("albedo") || qLower.includes("asphalt")) {
-        botAnswer = "Standard asphalt absorbs over 90% of solar radiation. Cool pavement coatings with Solar Reflectance Index (SRI) >= 78 reflect majority solar rays, dropping surface temps by 12-18°C.";
-        botRec = "Apply high-albedo coatings to wide parking structures and high-traffic bus corridors.";
+        botAnswer = `Standard asphalt in ${cityName} absorbs over 90% of solar radiation. Cool pavement coatings with Solar Reflectance Index (SRI) >= 78 reflect majority solar rays, dropping surface temps by 12-18°C.`;
+        botRec = `Apply high-albedo coatings to wide parking structures and high-traffic bus corridors in ${cityName}.`;
         botSources = ["Qdrant SRI Albedo Standards"];
       } else {
-        botAnswer = `Analyzing "${query}": HEATSCAPE AI evaluates spatial remote sensing telemetry (Landsat-8 LST, Sentinel-2 NDVI) to detect microclimate hotspots and rank targeted green infrastructure interventions.`;
-        botRec = "Select a specific city zone on the Interactive GIS Map to view localized microclimate statistics and cooling action plans.";
+        botAnswer = `Analyzing "${query}" for ${cityName}: HEATSCAPE AI evaluates spatial remote sensing telemetry (Landsat-8 LST, Sentinel-2 NDVI) to detect microclimate hotspots and rank targeted green infrastructure interventions.`;
+        botRec = `Select a specific zone in ${cityName} on the Interactive GIS Map to view localized microclimate statistics and cooling action plans.`;
       }
 
       setMessages(prev => [...prev, {

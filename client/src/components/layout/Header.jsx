@@ -8,7 +8,8 @@ const CITIES_LIST = [
   { id: "mumbai", name: "Mumbai", country: "India", temp: "43.6°C" },
   { id: "london", name: "London", country: "UK", temp: "33.2°C" },
   { id: "singapore", name: "Singapore", country: "Singapore", temp: "36.5°C" },
-  { id: "nyc", name: "New York", country: "USA", temp: "38.9°C" }
+  { id: "nyc", name: "New York", country: "USA", temp: "38.9°C" },
+  { id: "cairo", name: "Cairo", country: "Egypt", temp: "44.1°C" }
 ];
 
 export function Header({

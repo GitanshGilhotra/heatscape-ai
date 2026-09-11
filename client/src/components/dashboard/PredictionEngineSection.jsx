@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Sliders, Activity, CheckCircle2, BarChart2, ShieldAlert, Sparkles } from 'lucide-react';
 
+const CITY_FEATURE_DEFAULTS = {
+  delhi: { ambient_temp: 45.2, ndvi: 0.14, building_density: 78, impervious_ratio: 88, humidity: 45 },
+  phoenix: { ambient_temp: 49.1, ndvi: 0.11, building_density: 82, impervious_ratio: 92, humidity: 22 },
+  tokyo: { ambient_temp: 40.8, ndvi: 0.22, building_density: 85, impervious_ratio: 86, humidity: 62 },
+  mumbai: { ambient_temp: 43.6, ndvi: 0.16, building_density: 89, impervious_ratio: 90, humidity: 78 },
+  london: { ambient_temp: 33.2, ndvi: 0.28, building_density: 74, impervious_ratio: 72, humidity: 68 },
+  singapore: { ambient_temp: 36.5, ndvi: 0.35, building_density: 81, impervious_ratio: 78, humidity: 82 },
+  nyc: { ambient_temp: 38.9, ndvi: 0.18, building_density: 84, impervious_ratio: 84, humidity: 58 },
+  cairo: { ambient_temp: 44.1, ndvi: 0.08, building_density: 91, impervious_ratio: 94, humidity: 32 }
+};
+
 export function PredictionEngineSection({ activeCity }) {
   const [modelType, setModelType] = useState('xgboost');
   const [features, setFeatures] = useState({
-    ndvi: 0.11,
-    building_density: 88,
-    impervious_ratio: 92,
+    ndvi: 0.14,
+    building_density: 78,
+    impervious_ratio: 88,
     humidity: 45,
-    ambient_temp: 38
+    ambient_temp: 45.2
   });
 
   useEffect(() => {
     if (activeCity) {
-      const cityTempStr = activeCity.temp || "38";
-      const numericTemp = parseFloat(String(cityTempStr).replace('°C', '').trim()) || 38.0;
-      setFeatures(prev => ({
-        ...prev,
-        ambient_temp: numericTemp
-      }));
+      const cityDefaults = CITY_FEATURE_DEFAULTS[activeCity.id];
+      if (cityDefaults) {
+        setFeatures(cityDefaults);
+      } else {
+        const numericTemp = parseFloat(String(activeCity.temp || '38').replace('°C', '').trim()) || 38.0;
+        setFeatures(prev => ({ ...prev, ambient_temp: numericTemp }));
+      }
     }
   }, [activeCity]);
 

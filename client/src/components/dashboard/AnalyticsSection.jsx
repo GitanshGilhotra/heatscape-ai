@@ -2,16 +2,19 @@ import React from 'react';
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 import { BarChart2, TrendingDown, Shield, PieChart as PieIcon } from 'lucide-react';
 
-export function AnalyticsSection() {
+export function AnalyticsSection({ activeCity }) {
+  const cityName = activeCity?.name || "New Delhi";
+  const cityTemp = activeCity?.temp || "45.2°C";
+
   const lstVsNdviData = [
-    { ndvi: 0.04, lst: 47.4 },
-    { ndvi: 0.08, lst: 45.2 },
-    { ndvi: 0.12, lst: 42.8 },
-    { ndvi: 0.18, lst: 41.5 },
-    { ndvi: 0.25, lst: 38.6 },
-    { ndvi: 0.35, lst: 35.8 },
-    { ndvi: 0.50, lst: 32.4 },
-    { ndvi: 0.65, lst: 30.1 }
+    { ndvi: 0.04, lst: parseFloat(cityTemp) + 2.2 },
+    { ndvi: 0.08, lst: parseFloat(cityTemp) },
+    { ndvi: 0.12, lst: parseFloat(cityTemp) - 2.4 },
+    { ndvi: 0.18, lst: parseFloat(cityTemp) - 3.7 },
+    { ndvi: 0.25, lst: parseFloat(cityTemp) - 6.6 },
+    { ndvi: 0.35, lst: parseFloat(cityTemp) - 9.4 },
+    { ndvi: 0.50, lst: parseFloat(cityTemp) - 12.8 },
+    { ndvi: 0.65, lst: parseFloat(cityTemp) - 15.1 }
   ];
 
   const heatRiskPieData = [
@@ -23,10 +26,10 @@ export function AnalyticsSection() {
   ];
 
   const coolingProjectionData = [
-    { scenario: "Current Baseline", temp: 44.5, fill: "#ff2a5f" },
-    { scenario: "15% Canopy", temp: 42.1, fill: "#ff5500" },
-    { scenario: "30% Canopy + Roofs", temp: 39.4, fill: "#0088ff" },
-    { scenario: "Full Green Infra", temp: 36.8, fill: "#00ff88" }
+    { scenario: "Current Baseline", temp: parseFloat(cityTemp), fill: "#ff2a5f" },
+    { scenario: "15% Canopy", temp: parseFloat(cityTemp) - 2.4, fill: "#ff5500" },
+    { scenario: "30% Canopy + Roofs", temp: parseFloat(cityTemp) - 5.1, fill: "#0088ff" },
+    { scenario: "Full Green Infra", temp: parseFloat(cityTemp) - 7.7, fill: "#00ff88" }
   ];
 
   return (
@@ -36,13 +39,13 @@ export function AnalyticsSection() {
       <div className="text-center space-y-3 mb-12">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-cyan-glow/30 text-cyan-glow font-mono text-xs">
           <BarChart2 className="w-3.5 h-3.5" />
-          <span>CLIMATE ANALYTICS COMMAND CENTER</span>
+          <span>CLIMATE ANALYTICS COMMAND CENTER ({cityName.toUpperCase()})</span>
         </div>
         <h2 className="font-display font-bold text-3xl sm:text-4xl text-white">
-          QUANTITATIVE <span className="text-cyan-glow">MICROCLIMATE INSIGHTS</span>
+          QUANTITATIVE <span className="text-cyan-glow">MICROCLIMATE INSIGHTS FOR {cityName.toUpperCase()}</span>
         </h2>
         <p className="text-slate-400 text-sm max-w-2xl mx-auto">
-          Empirical correlations between Land Surface Temperature (LST), NDVI canopy density, and projected green infrastructure ROI.
+          Empirical correlations between Land Surface Temperature (LST), NDVI canopy density, and projected green infrastructure ROI in {cityName}.
         </p>
       </div>
 

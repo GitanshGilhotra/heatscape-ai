@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, TreePine, Building2, Sun, Waves, ArrowUpRight, CheckCircle, Sparkles, Filter } from 'lucide-react';
 
-export function GreenZonePlannerSection({ onSelectIntervention }) {
+export function GreenZonePlannerSection({ activeCity, onSelectIntervention }) {
   const [filterCategory, setFilterCategory] = useState("ALL");
 
   const interventions = [
@@ -74,13 +74,13 @@ export function GreenZonePlannerSection({ onSelectIntervention }) {
       <div className="text-center space-y-3 mb-12">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-neon-lime/30 text-neon-lime font-mono text-xs">
           <Shield className="w-3.5 h-3.5" />
-          <span>GREEN INFRASTRUCTURE RECOMMENDATION ENGINE</span>
+          <span>GREEN INFRASTRUCTURE RECOMMENDATION ENGINE ({activeCity?.name || 'NEW DELHI'})</span>
         </div>
         <h2 className="font-display font-bold text-3xl sm:text-4xl text-white">
-          RANKED <span className="text-neon-lime">COOLING INTERVENTIONS</span>
+          RANKED <span className="text-neon-lime">COOLING INTERVENTIONS</span> FOR {activeCity?.name ? activeCity.name.toUpperCase() : 'NEW DELHI'}
         </h2>
         <p className="text-slate-400 text-sm max-w-2xl mx-auto">
-          AI-prioritized green infrastructure deployment plans calculated using spatial priority scores, feasibility indices, and estimated cooling delta (°C).
+          AI-prioritized green infrastructure deployment plans for {activeCity?.name || 'New Delhi'} calculated using spatial priority scores, feasibility indices, and estimated cooling delta (°C).
         </p>
       </div>
 

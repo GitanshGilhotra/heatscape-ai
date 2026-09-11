@@ -85,7 +85,7 @@ export default function App() {
 
           {activeView === '3d-studio' && (
             <div className="space-y-6">
-              <Urban3dStudio />
+              <Urban3dStudio activeCity={activeCity} />
             </div>
           )}
 
@@ -116,11 +116,11 @@ export default function App() {
           )}
 
           {activeView === 'ai-planner' && (
-            <AiUrbanPlannerChat />
+            <AiUrbanPlannerChat activeCity={activeCity} />
           )}
 
           {activeView === 'analytics' && (
-            <AnalyticsSection />
+            <AnalyticsSection activeCity={activeCity} />
           )}
 
           {activeView === 'reports' && (

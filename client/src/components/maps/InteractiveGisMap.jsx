@@ -43,7 +43,52 @@ const CITIES_DATA = [
     zoom: 12,
     zones: [
       { id: "BOM-Z01", name: "BKC Commercial Corridor", lat: 19.0657, lng: 72.8687, lst: 43.6, ndvi: 0.08, builtUp: 94, risk: "CRITICAL", priority: "#1", action: "Urban Forest & Permeable Surfaces" },
-      { id: "BOM-Z02", name: "Dharavi Dense Zone", lat: 19.0402, lng: 72.8508, lst: 44.1, ndvi: 0.04, builtUp: 99, risk: "EXTREME", priority: "#2", action: "Reflective Roof Paints & Cool Corridors" }
+      { id: "BOM-Z02", name: "Dharavi Dense Zone", lat: 19.0402, lng: 72.8508, lst: 44.1, ndvi: 0.04, builtUp: 99, risk: "EXTREME", priority: "#2", action: "Reflective Roof Paints & Cool Corridors" },
+      { id: "BOM-Z03", name: "Sanjay Gandhi Park Buffer", lat: 19.2307, lng: 72.9106, lst: 31.2, ndvi: 0.74, builtUp: 10, risk: "OPTIMAL", priority: "#18", action: "Biodiversity Sanctuary Protection" }
+    ]
+  },
+  {
+    id: "london",
+    name: "London",
+    center: [51.5074, -0.1278],
+    zoom: 12,
+    zones: [
+      { id: "LDN-Z01", name: "City of London Commercial", lat: 51.5127, lng: -0.0918, lst: 35.8, ndvi: 0.10, builtUp: 92, risk: "HIGH", priority: "#1", action: "Green Roofs & Misting Stations" },
+      { id: "LDN-Z02", name: "Canary Wharf Financial Core", lat: 51.5054, lng: -0.0275, lst: 34.2, ndvi: 0.12, builtUp: 89, risk: "MODERATE", priority: "#2", action: "Dockside Cooling Basins" },
+      { id: "LDN-Z03", name: "Hyde Park Sanctuary", lat: 51.5073, lng: -0.1657, lst: 26.4, ndvi: 0.72, builtUp: 5, risk: "OPTIMAL", priority: "#25", action: "Park Canopy Conservation" }
+    ]
+  },
+  {
+    id: "singapore",
+    name: "Singapore",
+    center: [1.3521, 103.8198],
+    zoom: 12,
+    zones: [
+      { id: "SGP-Z01", name: "Marina Bay Financial Grid", lat: 1.2840, lng: 103.8510, lst: 38.5, ndvi: 0.14, builtUp: 93, risk: "HIGH", priority: "#1", action: "Sky Terraces & Vertical Greenery" },
+      { id: "SGP-Z02", name: "Jurong Industrial Hub", lat: 1.3329, lng: 103.6980, lst: 37.9, ndvi: 0.11, builtUp: 90, risk: "HIGH", priority: "#2", action: "Cool Coatings & Solar Roofing" },
+      { id: "SGP-Z03", name: "Gardens by the Bay Buffer", lat: 1.2816, lng: 103.8636, lst: 28.8, ndvi: 0.81, builtUp: 8, risk: "OPTIMAL", priority: "#30", action: "Tropical Canopy Preservation" }
+    ]
+  },
+  {
+    id: "nyc",
+    name: "New York",
+    center: [40.7128, -74.0060],
+    zoom: 12,
+    zones: [
+      { id: "NYC-Z01", name: "Midtown Concrete Canyon", lat: 40.7549, lng: -73.9840, lst: 41.6, ndvi: 0.06, builtUp: 97, risk: "CRITICAL", priority: "#1", action: "Reflective Cool Roofs & Street Trees" },
+      { id: "NYC-Z02", name: "Brooklyn Navy Yard Sector", lat: 40.7005, lng: -73.9740, lst: 39.8, ndvi: 0.09, builtUp: 91, risk: "HIGH", priority: "#2", action: "Permeable Pavements & Shading" },
+      { id: "NYC-Z03", name: "Central Park Preserve", lat: 40.7829, lng: -73.9654, lst: 29.5, ndvi: 0.76, builtUp: 4, risk: "OPTIMAL", priority: "#20", action: "Urban Forest Conservation" }
+    ]
+  },
+  {
+    id: "cairo",
+    name: "Cairo",
+    center: [30.0444, 31.2357],
+    zoom: 12,
+    zones: [
+      { id: "CAI-Z01", name: "Tahrir Square Urban Grid", lat: 30.0444, lng: 31.2357, lst: 46.5, ndvi: 0.03, builtUp: 96, risk: "CRITICAL", priority: "#1", action: "Desert Solar Canopies & Cool Pavement" },
+      { id: "CAI-Z02", name: "Helwan Industrial Zone", lat: 29.8415, lng: 31.3008, lst: 47.9, ndvi: 0.02, builtUp: 98, risk: "EXTREME", priority: "#2", action: "Industrial Heat Radiation Isolation" },
+      { id: "CAI-Z03", name: "Al-Azhar Park Oasis", lat: 30.0409, lng: 31.2652, lst: 33.8, ndvi: 0.65, builtUp: 12, risk: "MODERATE", priority: "#15", action: "Native Drought-Tolerant Canopy" }
     ]
   }
 ];
@@ -103,11 +148,18 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
     if (found) {
       setSelectedCity(found);
       if (setActiveCity) {
-        const cityTemps = { delhi: "45.2°C", phoenix: "49.1°C", tokyo: "40.8°C", mumbai: "43.6°C" };
+        const cityTemps = {
+          delhi: "45.2°C", phoenix: "49.1°C", tokyo: "40.8°C", mumbai: "43.6°C",
+          london: "33.2°C", singapore: "36.5°C", nyc: "38.9°C", cairo: "44.1°C"
+        };
+        const cityCountries = {
+          delhi: "India", phoenix: "USA", tokyo: "Japan", mumbai: "India",
+          london: "UK", singapore: "Singapore", nyc: "USA", cairo: "Egypt"
+        };
         setActiveCity({
           id: found.id,
           name: found.name,
-          country: found.id === 'phoenix' ? 'USA' : (found.id === 'tokyo' ? 'Japan' : 'India'),
+          country: cityCountries[found.id] || "Global",
           temp: cityTemps[found.id] || "42.0°C"
         });
       }

@@ -66,10 +66,10 @@ def search_vector_memory(query: str, top_k: int = 2):
     return matches[:top_k]
 
 
-def process_rag_query(query: str, chat_history: list = None, gemini_key: str = None):
+def process_rag_query(query: str, chat_history: list = None, gemini_key: str = None, city: str = "New Delhi"):
     """
     LangChain RAG Query Orchestration:
-    User Query + Chat History -> Vector Retrieval (Qdrant) -> Context Assembly -> Gemini AI / Built-in Grounded Engine
+    User Query + City Context + Chat History -> Vector Retrieval (Qdrant) -> Context Assembly -> Gemini AI / Built-in Grounded Engine
     """
     clean_q = query.lower().translate(str.maketrans('', '', '?,!.')).strip()
     greeting_keywords = ["hi", "hello", "hey", "greetings", "namaste", "hola", "good morning", "good evening"]
@@ -82,8 +82,8 @@ def process_rag_query(query: str, chat_history: list = None, gemini_key: str = N
     if is_greeting:
         return {
             "query": query,
-            "answer": "Hello! I am HEATSCAPE AI, your urban climate assistant. How can I help you analyze Land Surface Temperatures (LST), tree canopy placement, or cooling interventions today?",
-            "recommendation": "Select a sample prompt below or ask about a specific city zone (e.g., 'Why is Zone 18 so hot?').",
+            "answer": f"Hello! I am HEATSCAPE AI, your urban climate assistant. Currently analyzing telemetry for {city}. How can I help you examine Land Surface Temperatures, tree canopy placement, or cooling interventions today?",
+            "recommendation": f"Select a sample prompt below or ask about specific thermal zones in {city}.",
             "confidence": "HEATSCAPE Assistant Core",
             "retrieved_context": retrieved_docs,
             "pipeline_nodes": [
@@ -111,7 +111,7 @@ def process_rag_query(query: str, chat_history: list = None, gemini_key: str = N
     confidence = ""
     
     if key_to_use and key_to_use != "your_google_gemini_api_key_here":
-        # Google Gemini 2.5 Flash / 2.0 Flash REST endpoints
+        # Google Gemini REST endpoints
         endpoints = [
             f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key_to_use}",
             f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key_to_use}",
@@ -125,13 +125,14 @@ def process_rag_query(query: str, chat_history: list = None, gemini_key: str = N
             try:
                 prompt = (
                     f"You are HEATSCAPE AI, an expert urban climate scientist and AI urban planning assistant.\n"
-                    f"Answer the user's question accurately, directly, and helpfully based on the retrieved microclimate context and conversation history.\n\n"
+                    f"TARGET CITY: {city}\n"
+                    f"Answer the user's question accurately, directly, and helpfully based on the retrieved microclimate context, target city ({city}), and conversation history.\n\n"
                     f"RELEVANT CLIMATE CONTEXT:\n{context_str}\n\n"
                     f"CONVERSATION HISTORY:\n{history_str}\n\n"
                     f"CURRENT USER QUESTION: {query}\n\n"
                     f"Respond ONLY in valid JSON format with 2 keys:\n"
-                    f"1. 'answer': A comprehensive and clear answer to the user's question (2 to 4 sentences).\n"
-                    f"2. 'recommendation': An actionable urban planning recommendation (1 to 2 sentences)."
+                    f"1. 'answer': A comprehensive and clear answer tailored to {city} (2 to 4 sentences).\n"
+                    f"2. 'recommendation': An actionable urban planning recommendation for {city} (1 to 2 sentences)."
                 )
                 
                 req_data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')

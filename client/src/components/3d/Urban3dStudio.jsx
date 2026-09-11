@@ -447,8 +447,29 @@ function PhotorealisticCityScene({
 }
 
 // Container Studio Component
-export function Urban3dStudio() {
-  const [blocks, setBlocks] = useState(() => createArchitecturalBlocks());
+export function Urban3dStudio({ activeCity }) {
+  const cityName = activeCity?.name || "New Delhi";
+  const cityTemp = parseFloat(String(activeCity?.temp || '42.8').replace('°C', '').trim()) || 42.8;
+
+  const [blocks, setBlocks] = useState(() => {
+    const defaultBlocks = createArchitecturalBlocks();
+    return defaultBlocks.map(b => ({
+      ...b,
+      currentLst: b.isPark ? Math.max(22, cityTemp - 15) : (b.height > 2.0 ? cityTemp + 3 : cityTemp - 2),
+      baseLst: b.isPark ? Math.max(22, cityTemp - 15) : (b.height > 2.0 ? cityTemp + 3 : cityTemp - 2)
+    }));
+  });
+
+  useEffect(() => {
+    if (activeCity) {
+      const numericTemp = parseFloat(String(activeCity.temp || '42.8').replace('°C', '').trim()) || 42.8;
+      setBlocks(prev => prev.map(b => ({
+        ...b,
+        currentLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2),
+        baseLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2)
+      })));
+    }
+  }, [activeCity]);
   const [timeOfDay, setTimeOfDay] = useState(13);
   const [renderMode, setRenderMode] = useState('photorealistic'); // 'photorealistic' | 'thermal'
   const [selectedTool, setSelectedTool] = useState('tree');
@@ -514,15 +535,15 @@ export function Urban3dStudio() {
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-400 font-mono text-xs mb-1.5 shadow-lg shadow-cyan- glow/10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-400 font-mono text-xs mb-1.5 shadow-lg shadow-cyan-glow/10">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>PHOTOREALISTIC 3D URBAN MICROCLIMATE STUDIO</span>
+            <span>3D URBAN MICROCLIMATE STUDIO ({cityName.toUpperCase()})</span>
           </div>
           <h3 className="font-display font-bold text-2xl text-white tracking-tight">
-            3D ARCHITECTURAL THERMAL SIMULATION & GREEN INFRASTRUCTURE
+            3D ARCHITECTURAL THERMAL SIMULATION — {cityName.toUpperCase()}
           </h3>
           <p className="text-slate-400 text-xs font-mono">
-            Interactive 3D viewport featuring procedural skyscrapers, glass facades, solar panels, and real-time thermal cooling calculations.
+            Interactive 3D viewport featuring procedural skyscrapers, glass facades, solar panels, and real-time thermal cooling calculations for {cityName}.
           </p>
         </div>
 

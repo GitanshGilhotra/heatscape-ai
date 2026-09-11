@@ -5,14 +5,14 @@ import * as THREE from 'three';
 
 // Megacity Hotspot Nodes mapped to 3D Sphere Coordinates
 const CITY_NODES = [
-  { name: "New Delhi", lat: 28.6139, lng: 77.2090, temp: "45.2°C", color: "#ff2a5f", severity: "EXTREME" },
-  { name: "Phoenix", lat: 33.4484, lng: -112.0740, temp: "49.1°C", color: "#ff5500", severity: "EXTREME" },
-  { name: "Tokyo", lat: 35.6762, lng: 139.6503, temp: "40.8°C", color: "#ffaa00", severity: "HIGH" },
-  { name: "Mumbai", lat: 19.0760, lng: 72.8777, temp: "43.6°C", color: "#ff2a5f", severity: "CRITICAL" },
-  { name: "London", lat: 51.5074, lng: -0.1278, temp: "33.2°C", color: "#0088ff", severity: "MODERATE" },
-  { name: "Singapore", lat: 1.3521, lng: 103.8198, temp: "36.5°C", color: "#00ff88", severity: "OPTIMAL" },
-  { name: "New York", lat: 40.7128, lng: -74.0060, temp: "38.9°C", color: "#ffaa00", severity: "HIGH" },
-  { name: "Cairo", lat: 30.0444, lng: 31.2357, temp: "44.1°C", color: "#ff2a5f", severity: "CRITICAL" }
+  { id: "delhi", name: "New Delhi", country: "India", lat: 28.6139, lng: 77.2090, temp: "45.2°C", color: "#ff2a5f", severity: "EXTREME" },
+  { id: "phoenix", name: "Phoenix", country: "USA", lat: 33.4484, lng: -112.0740, temp: "49.1°C", color: "#ff5500", severity: "EXTREME" },
+  { id: "tokyo", name: "Tokyo", country: "Japan", lat: 35.6762, lng: 139.6503, temp: "40.8°C", color: "#ffaa00", severity: "HIGH" },
+  { id: "mumbai", name: "Mumbai", country: "India", lat: 19.0760, lng: 72.8777, temp: "43.6°C", color: "#ff2a5f", severity: "CRITICAL" },
+  { id: "london", name: "London", country: "UK", lat: 51.5074, lng: -0.1278, temp: "33.2°C", color: "#0088ff", severity: "MODERATE" },
+  { id: "singapore", name: "Singapore", country: "Singapore", lat: 1.3521, lng: 103.8198, temp: "36.5°C", color: "#00ff88", severity: "OPTIMAL" },
+  { id: "nyc", name: "New York", country: "USA", lat: 40.7128, lng: -74.0060, temp: "38.9°C", color: "#ffaa00", severity: "HIGH" },
+  { id: "cairo", name: "Cairo", country: "Egypt", lat: 30.0444, lng: 31.2357, temp: "44.1°C", color: "#ff2a5f", severity: "CRITICAL" }
 ];
 
 function latLngToVector3(lat, lng, radius) {

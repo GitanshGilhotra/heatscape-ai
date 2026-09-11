@@ -16,12 +16,25 @@ import {
   Activity
 } from 'lucide-react';
 
+const CITY_OVERVIEW_METRICS = {
+  delhi: { canopyDeficit: "-34.2%", popAtRisk: "4.2M", maxCooling: "-6.4°C" },
+  phoenix: { canopyDeficit: "-41.5%", popAtRisk: "2.8M", maxCooling: "-7.2°C" },
+  tokyo: { canopyDeficit: "-22.1%", popAtRisk: "5.1M", maxCooling: "-5.8°C" },
+  mumbai: { canopyDeficit: "-31.8%", popAtRisk: "6.5M", maxCooling: "-6.2°C" },
+  london: { canopyDeficit: "-16.4%", popAtRisk: "1.4M", maxCooling: "-4.5°C" },
+  singapore: { canopyDeficit: "-12.8%", popAtRisk: "1.8M", maxCooling: "-4.8°C" },
+  nyc: { canopyDeficit: "-28.4%", popAtRisk: "3.4M", maxCooling: "-5.9°C" },
+  cairo: { canopyDeficit: "-44.8%", popAtRisk: "5.8M", maxCooling: "-7.5°C" }
+};
+
 export function OverviewView({
   activeCity,
   setActiveCity,
   onNavigate,
   onOpenReport
 }) {
+  const currentMetrics = CITY_OVERVIEW_METRICS[activeCity?.id] || CITY_OVERVIEW_METRICS.delhi;
+
   return (
     <div className="space-y-6 font-mono text-slate-100 pb-12">
       {/* Top Banner & Quick Telemetry Metrics */}
@@ -32,13 +45,13 @@ export function OverviewView({
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-glow text-xs">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>NASA CLIMATE INTELLIGENCE COMMAND CENTER</span>
+              <span>NASA CLIMATE INTELLIGENCE COMMAND CENTER ({activeCity?.name ? activeCity.name.toUpperCase() : 'NEW DELHI'})</span>
             </div>
             <h1 className="font-display font-bold text-3xl sm:text-4xl text-white tracking-tight">
               URBAN HEAT ISLAND <span className="text-cyan-glow">EXECUTIVE OVERVIEW</span>
             </h1>
             <p className="text-slate-400 text-xs leading-relaxed">
-              Multi-satellite Landsat-8 and Sentinel-2 telemetry paired with XGBoost spatial regressions predicting Land Surface Temperatures (LST) and evaluating green cooling interventions.
+              Multi-satellite Landsat-8 and Sentinel-2 telemetry paired with XGBoost spatial regressions predicting Land Surface Temperatures (LST) and evaluating green cooling interventions for {activeCity?.name || 'New Delhi'}.
             </p>
           </div>
 
@@ -74,7 +87,7 @@ export function OverviewView({
           <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-1">
             <span className="text-slate-400 text-[10px] block">CANOPY DEFICIT</span>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-red-400">-34.2%</span>
+              <span className="text-2xl font-bold text-red-400">{currentMetrics.canopyDeficit}</span>
               <AlertTriangle className="w-4 h-4 text-red-400" />
             </div>
             <span className="text-[10px] text-slate-500">NDVI &lt; 0.15 Hotspots</span>
@@ -83,7 +96,7 @@ export function OverviewView({
           <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-1">
             <span className="text-slate-400 text-[10px] block">MAX COOLING DELTA</span>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-emerald-400">-6.4°C</span>
+              <span className="text-2xl font-bold text-emerald-400">{currentMetrics.maxCooling}</span>
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
             <span className="text-[10px] text-slate-500">Via Tree Canopy & Roofs</span>
@@ -92,7 +105,7 @@ export function OverviewView({
           <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-1">
             <span className="text-slate-400 text-[10px] block">POPULATION AT RISK</span>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-cyan-glow">4.2M</span>
+              <span className="text-2xl font-bold text-cyan-glow">{currentMetrics.popAtRisk}</span>
               <Globe className="w-4 h-4 text-cyan-glow" />
             </div>
             <span className="text-[10px] text-slate-500">Urban Heat Vulnerability</span>
