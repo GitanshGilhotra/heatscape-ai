@@ -115,4 +115,11 @@ def chat_ai_planner(req: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    except Exception as err:
+        if "10048" in str(err) or "address already in use" in str(err).lower():
+            print("\n[HEATSCAPE ML SERVICE ERROR] Port 8000 is already in use by another process.")
+            print("To free port 8000 on Windows, run:\n   npx kill-port 8000\nOR in PowerShell:\n   Stop-Process -Name python -Force\n")
+        else:
+            raise err
