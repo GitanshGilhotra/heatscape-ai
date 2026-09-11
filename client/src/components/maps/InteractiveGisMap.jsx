@@ -48,12 +48,35 @@ function ChangeMapView({ center, zoom }) {
 
 export function InteractiveGisMap({ onSelectZone }) {
   const [selectedCity, setSelectedCity] = useState(CITIES_DATA[0]);
-  const [mapMode, setMapMode] = useState("dark"); // "dark" | "satellite"
-  const [activeLayer, setActiveLayer] = useState("heat"); // "heat" | "ndvi" | "risk"
+  const [mapMode, setMapMode] = useState("dark"); // "dark" | "satellite" | "osm"
+  const [activeLayer, setActiveLayer] = useState("heat"); // "heat" | "ndvi"
+  const [liveTelemetry, setLiveTelemetry] = useState(null);
+
+  // Fetch live weather when city changes
+  useEffect(() => {
+    const cleanKey = (import.meta.env.VITE_OPENWEATHER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+    if (cleanKey) {
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(selectedCity.name)}&units=metric&appid=${cleanKey}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.main) {
+            setLiveTelemetry({
+              temp: data.main.temp,
+              humidity: data.main.humidity,
+              desc: data.weather[0]?.description
+            });
+          }
+        })
+        .catch(() => setLiveTelemetry(null));
+    }
+  }, [selectedCity]);
 
   const tileUrl = mapMode === "satellite"
     ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+    : (mapMode === "osm" 
+        ? "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        : "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png");
+
 
   return (
     <div className="relative w-full h-[620px] rounded-2xl overflow-hidden glass-panel-glow border border-cyan-glow/30 shadow-2xl">
@@ -105,7 +128,10 @@ export function InteractiveGisMap({ onSelectZone }) {
       <div className="absolute top-4 right-4 z-[1000] hidden md:flex items-center gap-3 bg-[#0d111a]/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-cyan-glow/30 text-xs font-mono">
         <span className="flex items-center gap-1 text-slate-300">
           <Thermometer className="w-4 h-4 text-thermal-orange" />
-          Avg LST: <strong className="text-white">42.8°C</strong>
+          <span>{liveTelemetry ? "Live Weather:" : "Avg LST:"}</span>
+          <strong className="text-white">
+            {liveTelemetry ? `${liveTelemetry.temp}°C (${liveTelemetry.desc})` : "42.8°C"}
+          </strong>
         </span>
         <span className="text-slate-600">|</span>
         <span className="flex items-center gap-1 text-slate-300">
@@ -113,6 +139,7 @@ export function InteractiveGisMap({ onSelectZone }) {
           Avg NDVI: <strong className="text-white">0.14</strong>
         </span>
       </div>
+
 
       {/* Leaflet Map Engine */}
       <MapContainer

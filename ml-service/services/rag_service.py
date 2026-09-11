@@ -79,10 +79,12 @@ def process_rag_query(query: str):
     ai_generated = False
     
     if gemini_key and gemini_key != "your_google_gemini_api_key_here":
-        # Try primary gemini-1.5-flash endpoint, then gemini-pro endpoint
+        # Google Gemini 2.5 Flash / 2.0 Flash REST endpoints
         endpoints = [
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}",
             f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={gemini_key}"
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={gemini_key}"
         ]
         
         for url in endpoints:
@@ -94,7 +96,7 @@ def process_rag_query(query: str):
                 req_data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
                 req = urllib.request.Request(url, data=req_data, headers={'Content-Type': 'application/json'})
                 
-                with urllib.request.urlopen(req, timeout=6) as response:
+                with urllib.request.urlopen(req, timeout=8) as response:
                     if response.status == 200:
                         resp_json = json.loads(response.read().decode('utf-8'))
                         text_out = resp_json['candidates'][0]['content']['parts'][0]['text']
@@ -110,6 +112,7 @@ def process_rag_query(query: str):
                         ai_generated = True
             except Exception as e:
                 print(f"[GEMINI RAG] Model endpoint fetch note: {e}")
+
 
 
     if not ai_generated:
