@@ -478,7 +478,7 @@ export function Urban3dStudio({ activeCity }) {
   const cityTemp = parseFloat(String(activeCity?.temp || '42.8').replace('°C', '').trim()) || 42.8;
 
   const [blocks, setBlocks] = useState(() => {
-    const defaultBlocks = createArchitecturalBlocks();
+    const defaultBlocks = createArchitecturalBlocks(cityName);
     return defaultBlocks.map(b => ({
       ...b,
       currentLst: b.isPark ? Math.max(22, cityTemp - 15) : (b.height > 2.0 ? cityTemp + 3 : cityTemp - 2),
@@ -489,7 +489,8 @@ export function Urban3dStudio({ activeCity }) {
   useEffect(() => {
     if (activeCity) {
       const numericTemp = parseFloat(String(activeCity.temp || '42.8').replace('°C', '').trim()) || 42.8;
-      setBlocks(prev => prev.map(b => ({
+      const newCityBlocks = createArchitecturalBlocks(activeCity.name);
+      setBlocks(newCityBlocks.map(b => ({
         ...b,
         currentLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2),
         baseLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2)
@@ -701,7 +702,7 @@ export function Urban3dStudio({ activeCity }) {
 
           {/* Reset */}
           <button
-            onClick={() => setBlocks(createArchitecturalBlocks())}
+            onClick={() => setBlocks(createArchitecturalBlocks(cityName))}
             className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition flex items-center justify-center gap-2"
           >
             <RefreshCw className="w-3.5 h-3.5" />

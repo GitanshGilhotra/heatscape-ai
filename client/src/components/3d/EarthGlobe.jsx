@@ -1,9 +1,8 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sphere, Line, Points, PointMaterial, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Megacity Hotspot Nodes mapped to 3D Sphere Coordinates across all continents
 const CITY_NODES = [
   { id: "delhi", name: "New Delhi", country: "India", lat: 28.6139, lng: 77.2090, temp: "45.2°C", color: "#ff2a5f", severity: "EXTREME" },
   { id: "phoenix", name: "Phoenix", country: "USA", lat: 33.4484, lng: -112.0740, temp: "49.1°C", color: "#ff5500", severity: "EXTREME" },
@@ -40,72 +39,70 @@ function latLngToVector3(lat, lng, radius) {
   return new THREE.Vector3(x, y, z);
 }
 
-// Generate realistic Earth texture (Oceans, Continents, Night City Lights, Polar Ice)
-function createPhotorealisticEarthTexture() {
-  const width = 1024;
-  const height = 512;
+// Generate realistic solid Earth texture with continents, blue oceans, green terrain & golden night lights
+function createSolidEarthTexture() {
+  const width = 2048;
+  const height = 1024;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  // Deep Ocean Base Gradient
+  // Solid Vibrant Ocean Gradient
   const oceanGrad = ctx.createLinearGradient(0, 0, 0, height);
-  oceanGrad.addColorStop(0, "#081d38");
-  oceanGrad.addColorStop(0.5, "#0b2b52");
-  oceanGrad.addColorStop(1, "#081d38");
+  oceanGrad.addColorStop(0, "#0a3a6b");
+  oceanGrad.addColorStop(0.5, "#0e4b85");
+  oceanGrad.addColorStop(1, "#0a3a6b");
   ctx.fillStyle = oceanGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // Helper to draw continent landmass blobs
-  ctx.fillStyle = "#1e4d2b"; // Landmass Green/Olive
-  ctx.strokeStyle = "#2e6f3e";
+  // Continent Shading
+  ctx.fillStyle = "#2d7a3a";
+  ctx.strokeStyle = "#389447";
 
-  const drawLand = (xPct, yPct, rX, rY) => {
+  const drawContinent = (xPct, yPct, rX, rY) => {
     ctx.beginPath();
     ctx.ellipse(xPct * width, yPct * height, rX * width, rY * height, 0, 0, Math.PI * 2);
     ctx.fill();
   };
 
   // North America
-  drawLand(0.22, 0.32, 0.12, 0.18);
-  drawLand(0.18, 0.28, 0.08, 0.12);
-  drawLand(0.26, 0.24, 0.09, 0.10);
+  drawContinent(0.22, 0.30, 0.13, 0.18);
+  drawContinent(0.18, 0.25, 0.09, 0.12);
+  drawContinent(0.27, 0.22, 0.08, 0.10);
 
   // South America
-  drawLand(0.32, 0.68, 0.07, 0.18);
-  drawLand(0.34, 0.62, 0.06, 0.12);
+  drawContinent(0.32, 0.68, 0.07, 0.19);
+  drawContinent(0.35, 0.60, 0.06, 0.12);
 
   // Europe
-  drawLand(0.52, 0.26, 0.06, 0.10);
+  drawContinent(0.52, 0.24, 0.07, 0.10);
 
   // Africa
-  drawLand(0.53, 0.54, 0.09, 0.19);
-  drawLand(0.56, 0.48, 0.08, 0.14);
+  drawContinent(0.53, 0.54, 0.09, 0.20);
+  drawContinent(0.56, 0.46, 0.08, 0.14);
 
-  // Eurasia / Asia
-  drawLand(0.68, 0.28, 0.16, 0.16);
-  drawLand(0.78, 0.35, 0.12, 0.14);
-  drawLand(0.72, 0.45, 0.08, 0.10); // India
+  // Asia & Eurasia
+  drawContinent(0.68, 0.26, 0.17, 0.16);
+  drawContinent(0.78, 0.32, 0.12, 0.14);
+  drawContinent(0.72, 0.44, 0.08, 0.10); // India
 
   // Australia
-  drawLand(0.85, 0.72, 0.08, 0.11);
+  drawContinent(0.85, 0.72, 0.08, 0.11);
 
-  // Antarctica & Arctic Ice Caps
-  ctx.fillStyle = "#e2e8f0";
-  ctx.fillRect(0, 0, width, height * 0.08); // North Pole
-  ctx.fillRect(0, height * 0.92, width, height * 0.08); // South Pole
+  // Polar Ice Caps
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height * 0.07);
+  ctx.fillRect(0, height * 0.93, width, height * 0.07);
 
-  // Golden Night City Lights Dots
-  ctx.fillStyle = "#fbbf24";
-  const numLights = 1400;
-  for (let i = 0; i < numLights; i++) {
+  // Golden Urban Night Lights Clusters
+  ctx.fillStyle = "#ffcc00";
+  for (let i = 0; i < 2000; i++) {
     const x = Math.random() * width;
     const y = Math.random() * height;
-    // Concentrate lights on land lat/lng ranges
-    if ((y > height * 0.18 && y < height * 0.82) && (x < width * 0.4 || x > width * 0.48)) {
-      ctx.globalAlpha = 0.3 + Math.random() * 0.7;
-      ctx.fillRect(x, y, 1.2, 1.2);
+    if (y > height * 0.15 && y < height * 0.85) {
+      ctx.globalAlpha = 0.4 + Math.random() * 0.6;
+      ctx.fillRect(x, y, 1.6, 1.6);
     }
   }
   ctx.globalAlpha = 1.0;
@@ -115,21 +112,50 @@ function createPhotorealisticEarthTexture() {
   return texture;
 }
 
-export function EarthGlobe({ onSelectCity }) {
+export function EarthGlobe({ activeCity, onSelectCity }) {
   const earthGroupRef = useRef();
   const satelliteRef = useRef();
   const cloudSphereRef = useRef();
   const particlesRef = useRef();
-  const [hoveredCity, setHoveredCity] = React.useState(null);
 
-  // Procedural Photorealistic Earth Canvas Texture
-  const earthTexture = useMemo(() => createPhotorealisticEarthTexture(), []);
+  const earthTexture = useMemo(() => createSolidEarthTexture(), []);
 
-  // Orbital particle field
-  const particleCount = 700;
+  // Selected city object
+  const currentCityObj = useMemo(() => {
+    if (!activeCity) return CITY_NODES[0];
+    const match = CITY_NODES.find(c => c.name.toLowerCase() === activeCity.name.toLowerCase() || c.id === activeCity.id);
+    if (match) return match;
+    const lat = activeCity.center ? activeCity.center[0] : 28.6139;
+    const lng = activeCity.center ? activeCity.center[1] : 77.2090;
+    return {
+      id: activeCity.id || 'custom',
+      name: activeCity.name,
+      country: activeCity.country || 'Global',
+      lat,
+      lng,
+      temp: activeCity.temp || '38.5°C',
+      color: '#00f3ff',
+      severity: 'SELECTED'
+    };
+  }, [activeCity]);
+
+  // Target rotation angle when activeCity changes
+  const targetRotationY = useMemo(() => {
+    if (!currentCityObj) return 0;
+    // Map longitude to Y rotation: -lng converted to radians
+    return (-currentCityObj.lng - 90) * (Math.PI / 180);
+  }, [currentCityObj]);
+
+  const targetRotationX = useMemo(() => {
+    if (!currentCityObj) return 0;
+    return (currentCityObj.lat) * (Math.PI / 180) * 0.4;
+  }, [currentCityObj]);
+
+  // Space Particle positions
   const particlePositions = useMemo(() => {
-    const pos = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i += 3) {
+    const count = 600;
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i += 3) {
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
@@ -146,12 +172,21 @@ export function EarthGlobe({ onSelectCity }) {
     const elapsedTime = clock.getElapsedTime();
 
     if (earthGroupRef.current) {
-      earthGroupRef.current.rotation.y = elapsedTime * 0.08;
-      earthGroupRef.current.rotation.x = Math.sin(elapsedTime * 0.03) * 0.05 + (mouse.y * 0.12);
+      // Smoothly lerp rotation towards active selected city
+      earthGroupRef.current.rotation.y = THREE.MathUtils.lerp(
+        earthGroupRef.current.rotation.y,
+        targetRotationY + (elapsedTime * 0.04),
+        0.05
+      );
+      earthGroupRef.current.rotation.x = THREE.MathUtils.lerp(
+        earthGroupRef.current.rotation.x,
+        targetRotationX + (mouse.y * 0.08),
+        0.05
+      );
     }
 
     if (cloudSphereRef.current) {
-      cloudSphereRef.current.rotation.y = elapsedTime * 0.12;
+      cloudSphereRef.current.rotation.y = elapsedTime * 0.08;
     }
 
     if (satelliteRef.current) {
@@ -167,16 +202,27 @@ export function EarthGlobe({ onSelectCity }) {
     }
   });
 
+  const selectedPos = useMemo(() => {
+    return latLngToVector3(currentCityObj.lat, currentCityObj.lng, 2.04);
+  }, [currentCityObj]);
+
+  const selectedPillarEnd = useMemo(() => {
+    const normal = selectedPos.clone().normalize();
+    return selectedPos.clone().add(normal.clone().multiplyScalar(0.6));
+  }, [selectedPos]);
+
   return (
     <group ref={earthGroupRef}>
-      {/* Photorealistic 3D Earth Globe with Continents & Night Lights */}
+      {/* 100% Solid Photorealistic Earth Globe */}
       <Sphere args={[2, 64, 64]}>
         <meshStandardMaterial
           map={earthTexture}
-          roughness={0.4}
-          metalness={0.3}
-          emissive="#041226"
-          emissiveIntensity={0.3}
+          roughness={0.5}
+          metalness={0.1}
+          emissive="#001122"
+          emissiveIntensity={0.25}
+          transparent={false}
+          opacity={1.0}
         />
       </Sphere>
 
@@ -185,78 +231,97 @@ export function EarthGlobe({ onSelectCity }) {
         <meshStandardMaterial
           color="#ffffff"
           transparent
-          opacity={0.14}
-          wireframe={false}
+          opacity={0.18}
           roughness={1.0}
         />
       </Sphere>
 
-      {/* Atmospheric Rayleigh Blue Halo Glow Shroud */}
+      {/* Atmospheric Blue Rayleigh Glow Halo */}
       <Sphere args={[2.14, 32, 32]}>
         <meshBasicMaterial
           color="#00f3ff"
           transparent
-          opacity={0.18}
+          opacity={0.22}
           side={THREE.BackSide}
         />
       </Sphere>
 
-      {/* Megacity Hotspot Nodes with 3D Volumetric Thermal Pillars */}
+      {/* Render Cities Hotspot Nodes */}
       {CITY_NODES.map((city, idx) => {
         const pos = latLngToVector3(city.lat, city.lng, 2.04);
         const normal = pos.clone().normalize();
-        const pillarEnd = pos.clone().add(normal.clone().multiplyScalar(0.48));
-        const isHovered = hoveredCity?.id === city.id;
+        const pillarEnd = pos.clone().add(normal.clone().multiplyScalar(0.42));
+        const isSelected = currentCityObj.name.toLowerCase() === city.name.toLowerCase();
 
         return (
           <group key={idx}>
-            {/* Hotspot City Marker Pin */}
             <mesh
               position={pos}
               onClick={() => onSelectCity && onSelectCity(city)}
-              onPointerOver={(e) => {
-                e.stopPropagation();
-                setHoveredCity(city);
-              }}
-              onPointerOut={() => setHoveredCity(null)}
             >
-              <sphereGeometry args={[0.065, 16, 16]} />
-              <meshBasicMaterial color={isHovered ? "#ffffff" : city.color} />
+              <sphereGeometry args={[isSelected ? 0.08 : 0.05, 16, 16]} />
+              <meshBasicMaterial color={isSelected ? "#ffffff" : city.color} />
             </mesh>
 
-            {/* 3D Volumetric Thermal Laser Pillar */}
             <Line
               points={[pos, pillarEnd]}
-              color={city.color}
-              lineWidth={isHovered ? 4 : 2.5}
+              color={isSelected ? "#00f3ff" : city.color}
+              lineWidth={isSelected ? 4 : 2}
               transparent
-              opacity={0.9}
+              opacity={0.85}
             />
-
-            {/* Pillar Top Glowing Orb */}
-            <mesh position={pillarEnd}>
-              <sphereGeometry args={[0.035, 12, 12]} />
-              <meshBasicMaterial color={city.color} />
-            </mesh>
-
-            {/* Hover HTML Info Badge */}
-            {isHovered && (
-              <Html position={pillarEnd} center distanceFactor={7}>
-                <div className="bg-slate-950/95 border border-cyan-glow p-2.5 rounded-xl text-xs font-mono w-40 shadow-2xl backdrop-blur-xl pointer-events-none">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1">
-                    <span className="font-bold text-white">{city.name}</span>
-                    <span className="text-[10px] text-cyan-glow font-bold">{city.country}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400">Baseline LST:</span>
-                    <span className="text-thermal-orange font-bold">{city.temp}</span>
-                  </div>
-                </div>
-              </Html>
-            )}
           </group>
         );
       })}
+
+      {/* HIGHLIGHT & POINT OUT ACTIVE SELECTED CITY */}
+      <group>
+        {/* Pulsing Target Ring Pin */}
+        <mesh position={selectedPos}>
+          <sphereGeometry args={[0.09, 16, 16]} />
+          <meshBasicMaterial color="#00f3ff" />
+        </mesh>
+
+        {/* Dynamic 3D Volumetric Thermal Laser Pointer */}
+        <Line
+          points={[selectedPos, selectedPillarEnd]}
+          color="#ff2a5f"
+          lineWidth={4.5}
+          transparent
+          opacity={0.95}
+        />
+
+        <mesh position={selectedPillarEnd}>
+          <sphereGeometry args={[0.05, 14, 14]} />
+          <meshBasicMaterial color="#ff2a5f" />
+        </mesh>
+
+        {/* Floating HTML HUD Target Badge */}
+        <Html position={selectedPillarEnd} center distanceFactor={6.5}>
+          <div className="bg-slate-950/95 border-2 border-cyan-glow p-3 rounded-2xl text-xs font-mono w-52 shadow-2xl backdrop-blur-xl pointer-events-none transform -translate-y-2">
+            <div className="flex items-center justify-between border-b border-cyan-glow/30 pb-1.5 mb-1.5">
+              <span className="font-bold text-cyan-glow flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>TARGET CITY</span>
+              </span>
+              <span className="text-[9px] bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded text-amber-400 font-bold">
+                {currentCityObj.country}
+              </span>
+            </div>
+
+            <div className="text-white font-bold text-sm mb-1">{currentCityObj.name}</div>
+            
+            <div className="flex justify-between text-[11px] text-slate-300">
+              <span>Baseline Temp:</span>
+              <span className="text-thermal-orange font-bold">{currentCityObj.temp}</span>
+            </div>
+            <div className="flex justify-between text-[11px] text-slate-300">
+              <span>UHI Risk Level:</span>
+              <span className="text-heat-red font-bold">{currentCityObj.severity || 'CRITICAL'}</span>
+            </div>
+          </div>
+        </Html>
+      </group>
 
       {/* Orbiting NASA Climate Satellite */}
       <group ref={satelliteRef}>

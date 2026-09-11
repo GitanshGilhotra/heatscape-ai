@@ -120,7 +120,7 @@ export function OverviewView({
           <Canvas camera={{ position: [0, 0, 5.2], fov: 45 }}>
             <ambientLight intensity={0.6} />
             <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-            <EarthGlobe onSelectCity={(c) => setActiveCity(c)} />
+            <EarthGlobe activeCity={activeCity} onSelectCity={(c) => setActiveCity(c)} />
             <OrbitControls enableZoom={false} autoRotate={false} />
           </Canvas>
 
