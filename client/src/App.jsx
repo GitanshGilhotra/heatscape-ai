@@ -42,7 +42,12 @@ export default function App() {
   }, []);
 
   const handleGlobalSearch = (query) => {
-    setActiveView('ai-planner');
+    const q = (query || '').toLowerCase().trim();
+    if (q.startsWith('search zone') || q.startsWith('why') || q.startsWith('how') || q.startsWith('what') || q.includes('tree') || q.includes('roof')) {
+      setActiveView('ai-planner');
+    } else {
+      setActiveView('gis-map');
+    }
   };
 
   return (
