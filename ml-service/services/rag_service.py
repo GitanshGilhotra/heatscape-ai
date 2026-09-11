@@ -72,14 +72,14 @@ def process_rag_query(query: str, chat_history: list = None, gemini_key: str = N
     User Query + Chat History -> Vector Retrieval (Qdrant) -> Context Assembly -> Gemini AI / Built-in Grounded Engine
     """
     clean_q = query.lower().translate(str.maketrans('', '', '?,!.')).strip()
-    greeting_words = {"hi", "hello", "hey", "greetings", "namaste", "hola", "good morning", "good evening"}
-    query_tokens = set(clean_q.split())
+    greeting_keywords = ["hi", "hello", "hey", "greetings", "namaste", "hola", "good morning", "good evening"]
+    is_greeting = any(k in clean_q for k in greeting_keywords) and not any(t in clean_q for t in ["why", "how", "what", "temp", "zone", "tree", "roof", "pavement", "water", "compare"])
 
     retrieved_docs = search_vector_memory(query)
     context_str = "\n".join([f"- [{doc['topic']}]: {doc['content']}" for doc in retrieved_docs])
 
     # Direct Greeting Intent Recognition
-    if clean_q in greeting_words or (len(query_tokens) <= 3 and query_tokens.intersection({"hi", "hello", "hey", "greetings"})):
+    if is_greeting:
         return {
             "query": query,
             "answer": "Hello! I am HEATSCAPE AI, your urban climate assistant. How can I help you analyze Land Surface Temperatures (LST), tree canopy placement, or cooling interventions today?",
