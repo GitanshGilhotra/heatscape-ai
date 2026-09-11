@@ -35,10 +35,13 @@ export function AiUrbanPlannerChat() {
     setLoading(true);
 
     try {
+      const clean = (v) => (v || '').replace(/^["']|["']$/g, '').trim();
+      const geminiKey = clean(localStorage.getItem('heatscape_key_gemini')) || clean(import.meta.env.VITE_GEMINI_API_KEY);
+
       const res = await fetch('/py-api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query })
+        body: JSON.stringify({ message: query, gemini_key: geminiKey })
       });
       const json = await res.json();
       if (json.success) {

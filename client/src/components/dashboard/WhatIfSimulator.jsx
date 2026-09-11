@@ -4,11 +4,19 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { FuturisticMiniCity } from '../3d/FuturisticMiniCity';
 
-export function WhatIfSimulator() {
+export function WhatIfSimulator({ activeCity }) {
   const [baseLst, setBaseLst] = useState(44.5);
   const [treeCover, setTreeCover] = useState(25);
   const [greenRoof, setGreenRoof] = useState(20);
   const [reflectiveSurface, setReflectiveSurface] = useState(35);
+
+  useEffect(() => {
+    if (activeCity) {
+      const cityTempStr = activeCity.temp || "44.5";
+      const numericTemp = parseFloat(String(cityTempStr).replace('°C', '').trim()) || 44.5;
+      setBaseLst(numericTemp);
+    }
+  }, [activeCity]);
 
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(false);

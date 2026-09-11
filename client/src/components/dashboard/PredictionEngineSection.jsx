@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Sliders, Activity, CheckCircle2, BarChart2, ShieldAlert, Sparkles } from 'lucide-react';
 
-export function PredictionEngineSection() {
+export function PredictionEngineSection({ activeCity }) {
   const [modelType, setModelType] = useState('xgboost');
   const [features, setFeatures] = useState({
     ndvi: 0.11,
@@ -10,6 +10,17 @@ export function PredictionEngineSection() {
     humidity: 45,
     ambient_temp: 38
   });
+
+  useEffect(() => {
+    if (activeCity) {
+      const cityTempStr = activeCity.temp || "38";
+      const numericTemp = parseFloat(String(cityTempStr).replace('°C', '').trim()) || 38.0;
+      setFeatures(prev => ({
+        ...prev,
+        ambient_temp: numericTemp
+      }));
+    }
+  }, [activeCity]);
 
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);

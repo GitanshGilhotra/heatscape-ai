@@ -35,6 +35,16 @@ const CITIES_DATA = [
       { id: "TYO-Z01", name: "Shinjuku Core", lat: 35.6895, lng: 139.7004, lst: 40.8, ndvi: 0.07, builtUp: 97, risk: "CRITICAL", priority: "#1", action: "Vertical Green Walls & Sky Gardens" },
       { id: "TYO-Z02", name: "Yoyogi Park", lat: 35.6717, lng: 139.6949, lst: 30.5, ndvi: 0.68, builtUp: 8, risk: "OPTIMAL", priority: "#20", action: "Biodiversity Preservation" }
     ]
+  },
+  {
+    id: "mumbai",
+    name: "Mumbai",
+    center: [19.0760, 72.8777],
+    zoom: 12,
+    zones: [
+      { id: "BOM-Z01", name: "BKC Commercial Corridor", lat: 19.0657, lng: 72.8687, lst: 43.6, ndvi: 0.08, builtUp: 94, risk: "CRITICAL", priority: "#1", action: "Urban Forest & Permeable Surfaces" },
+      { id: "BOM-Z02", name: "Dharavi Dense Zone", lat: 19.0402, lng: 72.8508, lst: 44.1, ndvi: 0.04, builtUp: 99, risk: "EXTREME", priority: "#2", action: "Reflective Roof Paints & Cool Corridors" }
+    ]
   }
 ];
 
@@ -46,30 +56,63 @@ function ChangeMapView({ center, zoom }) {
   return null;
 }
 
-export function InteractiveGisMap({ onSelectZone }) {
-  const [selectedCity, setSelectedCity] = useState(CITIES_DATA[0]);
+export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
+  const [selectedCity, setSelectedCity] = useState(() => {
+    if (activeCity) {
+      const matched = CITIES_DATA.find(c => c.id === activeCity.id);
+      if (matched) return matched;
+    }
+    return CITIES_DATA[0];
+  });
   const [mapMode, setMapMode] = useState("dark"); // "dark" | "satellite" | "osm"
   const [activeLayer, setActiveLayer] = useState("heat"); // "heat" | "ndvi"
   const [liveTelemetry, setLiveTelemetry] = useState(null);
 
-  // Fetch live weather when city changes
+  // Sync with global activeCity when prop changes
   useEffect(() => {
-    const cleanKey = (import.meta.env.VITE_OPENWEATHER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
-    if (cleanKey) {
-      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(selectedCity.name)}&units=metric&appid=${cleanKey}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data && data.main) {
-            setLiveTelemetry({
-              temp: data.main.temp,
-              humidity: data.main.humidity,
-              desc: data.weather[0]?.description
-            });
-          }
-        })
-        .catch(() => setLiveTelemetry(null));
+    if (activeCity) {
+      const matched = CITIES_DATA.find(c => c.id === activeCity.id);
+      if (matched && matched.id !== selectedCity.id) {
+        setSelectedCity(matched);
+      }
     }
+  }, [activeCity]);
+
+  // Fetch live weather from Express server endpoint
+  useEffect(() => {
+    const cleanKey = (v) => (v || '').replace(/^["']|["']$/g, '').trim();
+    const weatherKey = cleanKey(localStorage.getItem('heatscape_key_openweather')) || cleanKey(import.meta.env.VITE_OPENWEATHER_API_KEY);
+
+    fetch(`/api/weather/${encodeURIComponent(selectedCity.name)}?apiKey=${encodeURIComponent(weatherKey)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json && json.success && json.data) {
+          setLiveTelemetry({
+            temp: json.data.temp,
+            humidity: json.data.humidity,
+            desc: json.data.description,
+            isLive: json.live
+          });
+        }
+      })
+      .catch(() => setLiveTelemetry(null));
   }, [selectedCity]);
+
+  const handleCityChange = (cityId) => {
+    const found = CITIES_DATA.find(c => c.id === cityId);
+    if (found) {
+      setSelectedCity(found);
+      if (setActiveCity) {
+        const cityTemps = { delhi: "45.2°C", phoenix: "49.1°C", tokyo: "40.8°C", mumbai: "43.6°C" };
+        setActiveCity({
+          id: found.id,
+          name: found.name,
+          country: found.id === 'phoenix' ? 'USA' : (found.id === 'tokyo' ? 'Japan' : 'India'),
+          temp: cityTemps[found.id] || "42.0°C"
+        });
+      }
+    }
+  };
 
   const tileUrl = mapMode === "satellite"
     ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -85,7 +128,7 @@ export function InteractiveGisMap({ onSelectZone }) {
         {/* City Selector */}
         <select
           value={selectedCity.id}
-          onChange={(e) => setSelectedCity(CITIES_DATA.find(c => c.id === e.target.value))}
+          onChange={(e) => handleCityChange(e.target.value)}
           aria-label="Select Target City"
           className="bg-slate-900 text-cyan-glow font-bold border border-cyan-glow/40 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-glow cursor-pointer"
         >

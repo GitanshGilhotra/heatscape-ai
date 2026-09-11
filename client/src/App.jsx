@@ -99,20 +99,20 @@ export default function App() {
                   Satellite-derived Land Surface Temperature (LST) and NDVI vegetation index overlays across global urban centers.
                 </p>
               </div>
-              <InteractiveGisMap />
+              <InteractiveGisMap activeCity={activeCity} setActiveCity={setActiveCity} />
             </div>
           )}
 
           {activeView === 'prediction' && (
-            <PredictionEngineSection />
+            <PredictionEngineSection activeCity={activeCity} />
           )}
 
           {activeView === 'green-zones' && (
-            <GreenZonePlannerSection />
+            <GreenZonePlannerSection activeCity={activeCity} />
           )}
 
           {activeView === 'cooling-simulator' && (
-            <WhatIfSimulator />
+            <WhatIfSimulator activeCity={activeCity} />
           )}
 
           {activeView === 'ai-planner' && (

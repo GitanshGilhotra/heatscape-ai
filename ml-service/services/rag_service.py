@@ -66,8 +66,7 @@ def search_vector_memory(query: str, top_k: int = 2):
     return matches[:top_k]
 
 
-def process_rag_query(query: str):
-
+def process_rag_query(query: str, gemini_key: str = None):
     """
     LangChain RAG Query Orchestration:
     User Query -> Vector Retrieval (Qdrant) -> Context Assembly -> Gemini AI / Built-in Grounded Engine
@@ -75,16 +74,16 @@ def process_rag_query(query: str):
     retrieved_docs = search_vector_memory(query)
     context_str = "\n".join([f"- [{doc['topic']}]: {doc['content']}" for doc in retrieved_docs])
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "").replace('"', '').replace("'", '').strip()
+    key_to_use = (gemini_key or os.getenv("GEMINI_API_KEY", "")).replace('"', '').replace("'", '').strip()
     ai_generated = False
     
-    if gemini_key and gemini_key != "your_google_gemini_api_key_here":
+    if key_to_use and key_to_use != "your_google_gemini_api_key_here":
         # Google Gemini 2.5 Flash / 2.0 Flash REST endpoints
         endpoints = [
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}",
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}",
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
-            f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={gemini_key}"
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key_to_use}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key_to_use}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key_to_use}",
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={key_to_use}"
         ]
         
         for url in endpoints:
