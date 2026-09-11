@@ -1,8 +1,45 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect, Component } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html, Points, PointMaterial } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { Sun, TreePine, Flame, Sparkles, RefreshCw, ShieldCheck, Zap, Eye, Camera, Layers } from 'lucide-react';
+import { Sun, TreePine, Flame, Sparkles, RefreshCw, ShieldCheck, Zap, Eye, AlertTriangle } from 'lucide-react';
+
+// Error Boundary for 3D Viewport Safety
+class Studio3dErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn("[3D STUDIO ERROR BOUNDARY]", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 p-6 text-center text-xs font-mono space-y-3 border border-red-500/30 rounded-xl">
+          <AlertTriangle className="w-8 h-8 text-amber-400 animate-pulse" />
+          <span className="text-white font-bold">3D VIEWPORT ENGINE NOTICE</span>
+          <p className="text-slate-400 max-w-sm">
+            WebGL 3D Context re-initializing. Click below to reload the 3D Architectural Studio.
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-4 py-2 bg-cyan-glow text-black font-bold rounded-lg hover:bg-cyan-400 transition"
+          >
+            RELOAD 3D VIEWPORT
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Map locality landmark names for any world city
 function getLocalityLandmarks(cityName) {
@@ -40,7 +77,6 @@ function createArchitecturalBlocks(cityName = "New Delhi") {
       const isRoad = (x % 2 === 0 || z % 2 === 0);
       const isPark = (!isRoad && x === 1 && z === -1);
       
-      // Varied architectural building heights
       let height = 0.05;
       let buildingType = "road";
 
@@ -92,53 +128,38 @@ function createArchitecturalBlocks(cityName = "New Delhi") {
 function PhotorealisticTree({ position }) {
   const treeRef = useRef();
 
-  // Subtle wind swaying effect
   useFrame(({ clock }) => {
     if (treeRef.current) {
       treeRef.current.rotation.z = Math.sin(clock.getElapsedTime() * 1.5 + position[0]) * 0.03;
-      treeRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 1.2 + position[2]) * 0.03;
     }
   });
 
   return (
     <group ref={treeRef} position={position}>
-      {/* Trunk */}
-      <mesh position={[0, 0.25, 0]} castShadow>
+      <mesh position={[0, 0.25, 0]}>
         <cylinderGeometry args={[0.04, 0.08, 0.5, 8]} />
         <meshStandardMaterial color="#3d2314" roughness={0.9} />
       </mesh>
-
-      {/* Main Canopy Foliage Clusters */}
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <sphereGeometry args={[0.3, 12, 12]} />
+      <mesh position={[0, 0.6, 0]}>
+        <sphereGeometry args={[0.3, 10, 10]} />
         <meshStandardMaterial color="#0f766e" roughness={0.4} />
       </mesh>
-      <mesh position={[-0.12, 0.72, 0.1]} castShadow>
-        <sphereGeometry args={[0.22, 10, 10]} />
+      <mesh position={[-0.12, 0.72, 0.1]}>
+        <sphereGeometry args={[0.22, 8, 8]} />
         <meshStandardMaterial color="#10b981" roughness={0.3} />
-      </mesh>
-      <mesh position={[0.12, 0.75, -0.08]} castShadow>
-        <sphereGeometry args={[0.24, 10, 10]} />
-        <meshStandardMaterial color="#059669" roughness={0.35} />
-      </mesh>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <sphereGeometry args={[0.18, 8, 8]} />
-        <meshStandardMaterial color="#34d399" roughness={0.25} />
       </mesh>
     </group>
   );
 }
 
-// Realistic Architectural Building Mesh (Skyscraper / Commercial / Residential)
+// Realistic Architectural Building Mesh
 function ArchitecturalBuilding({ block, renderMode, isHovered, onClick, onPointerOver, onPointerOut }) {
   const b = block;
   const height = b.height;
 
-  // Render Mode Colors (Photorealistic vs Thermal Infrared Spectrum)
   let materialProps = {};
 
   if (renderMode === 'thermal') {
-    // False-Color Thermal Infrared Heatmap Shader
     let thermalColor = "#0088ff";
     let emissive = "#002b4d";
     let emissiveIntensity = 0.2;
@@ -165,7 +186,6 @@ function ArchitecturalBuilding({ block, renderMode, isHovered, onClick, onPointe
       metalness: 0.7
     };
   } else {
-    // Photorealistic Architectural Glass, Concrete, & Steel Materials
     let baseColor = "#1e293b";
     let roughness = 0.15;
     let metalness = 0.85;
@@ -187,17 +207,13 @@ function ArchitecturalBuilding({ block, renderMode, isHovered, onClick, onPointe
     materialProps = {
       color: isHovered ? "#38bdf8" : baseColor,
       roughness,
-      metalness,
-      envMapIntensity: 1.5
+      metalness
     };
   }
 
   return (
     <group position={[b.x, height / 2, b.z]}>
-      {/* Main Structural Building Geometry */}
       <mesh
-        castShadow
-        receiveShadow
         onClick={onClick}
         onPointerOver={onPointerOver}
         onPointerOut={onPointerOut}
@@ -206,73 +222,31 @@ function ArchitecturalBuilding({ block, renderMode, isHovered, onClick, onPointe
         <meshStandardMaterial {...materialProps} />
       </mesh>
 
-      {/* Photorealistic Architectural Details (Windows, Rooftop HVAC, Solar Arrays) */}
-      {renderMode === 'photorealistic' && (
-        <group>
-          {/* Glass Window Grid Facade Overlay */}
-          <mesh position={[0, 0, 0.605]}>
-            <planeGeometry args={[1.1, height * 0.9]} />
-            <meshStandardMaterial
-              color="#0284c7"
-              emissive="#0284c7"
-              emissiveIntensity={0.15}
-              roughness={0.05}
-              metalness={0.95}
-              transparent
-              opacity={0.8}
-            />
-          </mesh>
-          <mesh position={[0, 0, -0.605]} rotation={[0, Math.PI, 0]}>
-            <planeGeometry args={[1.1, height * 0.9]} />
-            <meshStandardMaterial
-              color="#0284c7"
-              emissive="#0284c7"
-              emissiveIntensity={0.15}
-              roughness={0.05}
-              metalness={0.95}
-              transparent
-              opacity={0.8}
-            />
-          </mesh>
-
-          {/* Rooftop HVAC Chiller Box */}
-          <mesh position={[0.2, height / 2 + 0.08, -0.2]} castShadow>
-            <boxGeometry args={[0.3, 0.16, 0.3]} />
-            <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.3} />
-          </mesh>
-
-          {/* Rooftop Solar Panels */}
-          {b.hasSolarPanels && (
-            <mesh position={[-0.2, height / 2 + 0.05, 0.2]} rotation={[-0.2, 0, 0]}>
-              <boxGeometry args={[0.5, 0.03, 0.4]} />
-              <meshStandardMaterial color="#1e3a8a" emissive="#1d4ed8" emissiveIntensity={0.4} metalness={0.9} />
-            </mesh>
-          )}
-
-          {/* Rooftop Helipad (for skyscrapers) */}
-          {b.buildingType === 'skyscraper' && (
-            <mesh position={[0, height / 2 + 0.02, 0]}>
-              <cylinderGeometry args={[0.35, 0.35, 0.02, 16]} />
-              <meshStandardMaterial color="#0f172a" roughness={0.8} />
-            </mesh>
-          )}
-        </group>
+      {renderMode === 'photorealistic' && !b.isRoad && !b.isPark && height > 0.6 && (
+        <mesh position={[0, 0, 0.605]}>
+          <planeGeometry args={[1.1, height * 0.9]} />
+          <meshStandardMaterial
+            color="#0284c7"
+            emissive="#0284c7"
+            emissiveIntensity={0.2}
+            roughness={0.05}
+            metalness={0.95}
+            transparent
+            opacity={0.8}
+          />
+        </mesh>
       )}
 
-      {/* 3D Green Rooftop Garden Terrace Cap */}
       {b.hasGreenRoof && (
         <group position={[0, height / 2 + 0.05, 0]}>
-          <mesh castShadow receiveShadow>
+          <mesh>
             <boxGeometry args={[1.22, 0.1, 1.22]} />
             <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.4} roughness={0.4} />
           </mesh>
-          {/* Mini garden trees on roof */}
           <PhotorealisticTree position={[-0.3, 0.05, -0.3]} />
-          <PhotorealisticTree position={[0.3, 0.05, 0.3]} />
         </group>
       )}
 
-      {/* Planted Ground Tree */}
       {b.hasTree && (
         <PhotorealisticTree position={[0, height / 2, 0]} />
       )}
@@ -280,83 +254,52 @@ function ArchitecturalBuilding({ block, renderMode, isHovered, onClick, onPointe
   );
 }
 
-// Moving Electric Transit Pod on Roadways
-function MovingTransitPod() {
-  const podRef = useRef();
-
-  useFrame(({ clock }) => {
-    if (podRef.current) {
-      const t = clock.getElapsedTime() * 0.8;
-      podRef.current.position.x = Math.sin(t) * 3.5;
-      podRef.current.position.z = Math.cos(t * 0.5) * 3.5;
-    }
-  });
-
-  return (
-    <group ref={podRef} position={[0, 0.12, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[0.25, 0.12, 0.12]} />
-        <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
 // Thermal Convection Volumetric Air Plumes
 function ThermalVolumetricParticles({ blocks, renderMode }) {
   const particlesRef = useRef();
-  const count = 500;
+  const count = 200;
 
-  const { positions, colors } = useMemo(() => {
+  const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-
     for (let i = 0; i < count; i++) {
-      const b = blocks[i % blocks.length];
+      const b = blocks[i % blocks.length] || { x: 0, height: 1, z: 0 };
       pos[i * 3] = b.x + (Math.random() - 0.5) * 1.0;
-      pos[i * 3 + 1] = b.height + Math.random() * 2.5;
+      pos[i * 3 + 1] = (b.height || 1) + Math.random() * 2.5;
       pos[i * 3 + 2] = b.z + (Math.random() - 0.5) * 1.0;
-
-      if (b.currentLst > 41) {
-        col[i * 3] = 1.0;
-        col[i * 3 + 1] = 0.15;
-        col[i * 3 + 2] = 0.25;
-      } else {
-        col[i * 3] = 0.0;
-        col[i * 3 + 1] = 0.95;
-        col[i * 3 + 2] = 0.75;
-      }
     }
-    return { positions: pos, colors: col };
+    return pos;
   }, [blocks]);
 
   useFrame(({ clock }) => {
-    if (particlesRef.current) {
-      const elapsed = clock.getElapsedTime();
-      const posArr = particlesRef.current.geometry.attributes.position.array;
-
+    const posAttr = particlesRef.current?.geometry?.attributes?.position;
+    if (posAttr && posAttr.array) {
+      const posArr = posAttr.array;
       for (let i = 0; i < count; i++) {
-        posArr[i * 3 + 1] += 0.018;
+        posArr[i * 3 + 1] += 0.015;
         if (posArr[i * 3 + 1] > 4.5) {
           posArr[i * 3 + 1] = 0.2;
         }
       }
-      particlesRef.current.geometry.attributes.position.needsUpdate = true;
-      particlesRef.current.rotation.y = elapsed * 0.04;
+      posAttr.needsUpdate = true;
     }
   });
 
   return (
-    <Points ref={particlesRef} positions={positions} colors={colors} stride={3}>
-      <PointMaterial
-        size={0.06}
-        vertexColors
+    <points ref={particlesRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.08}
+        color="#00f3ff"
         transparent
-        opacity={renderMode === 'thermal' ? 0.8 : 0.35}
-        sizeAttenuation
+        opacity={renderMode === 'thermal' ? 0.7 : 0.3}
         depthWrite={false}
       />
-    </Points>
+    </points>
   );
 }
 
@@ -372,7 +315,6 @@ function PhotorealisticCityScene({
 }) {
   const sceneRef = useRef();
 
-  // Solar Light Calculation
   const solarAngle = ((timeOfDay - 6) / 12) * Math.PI;
   const sunX = Math.cos(solarAngle) * 14;
   const sunY = Math.sin(solarAngle) * 14;
@@ -386,33 +328,24 @@ function PhotorealisticCityScene({
 
   return (
     <group ref={sceneRef} position={[0, -0.6, 0]}>
-      {/* Dynamic Lighting & Atmospheric Shadows */}
       <directionalLight
         position={[sunX, Math.max(1, sunY), sunZ]}
-        intensity={sunY > 0 ? (renderMode === 'photorealistic' ? 2.2 : 1.2) : 0.3}
+        intensity={sunY > 0 ? (renderMode === 'photorealistic' ? 2.0 : 1.2) : 0.3}
         color={timeOfDay > 16 || timeOfDay < 8 ? "#ff8800" : "#ffffff"}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
       />
       <ambientLight intensity={renderMode === 'photorealistic' ? 0.6 : 0.3} />
 
-      {/* Asphalt Ground Base Platform */}
-      <mesh position={[0, -0.1, 0]} receiveShadow>
+      {/* Asphalt Ground Platform */}
+      <mesh position={[0, -0.1, 0]}>
         <boxGeometry args={[12, 0.2, 12]} />
         <meshStandardMaterial color="#090d16" roughness={0.7} metalness={0.6} />
       </mesh>
 
-      {/* Cyber Neon Ground Grid Helper */}
       <gridHelper args={[12, 24, "#00f3ff", "#1e293b"]} position={[0, 0.01, 0]} />
 
-      {/* Moving Electric Transit Pod */}
-      <MovingTransitPod />
-
-      {/* Thermal Volumetric Air Drafts */}
       <ThermalVolumetricParticles blocks={blocks} renderMode={renderMode} />
 
-      {/* Render All Architectural Buildings & Trees */}
+      {/* Render All Buildings */}
       {blocks.map((b) => {
         const isHovered = hoveredBlock?.id === b.id;
 
@@ -433,7 +366,6 @@ function PhotorealisticCityScene({
               onPointerOut={() => setHoveredBlock(null)}
             />
 
-            {/* Hover Tooltip HUD Card */}
             {isHovered && !b.isRoad && (
               <Html position={[b.x, b.height + 0.6, b.z]} center distanceFactor={7}>
                 <div className="bg-slate-950/95 border border-cyan-400/60 p-3 rounded-xl text-xs font-mono w-48 shadow-2xl backdrop-blur-xl pointer-events-none">
@@ -456,10 +388,6 @@ function PhotorealisticCityScene({
                     <div className="flex justify-between">
                       <span>NDVI Vegetation:</span>
                       <span className="font-bold text-emerald-400">{b.currentNdvi.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Reflective SRI:</span>
-                      <span className="text-cyan-glow">{(b.albedo * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>
@@ -497,8 +425,9 @@ export function Urban3dStudio({ activeCity }) {
       })));
     }
   }, [activeCity]);
+
   const [timeOfDay, setTimeOfDay] = useState(13);
-  const [renderMode, setRenderMode] = useState('photorealistic'); // 'photorealistic' | 'thermal'
+  const [renderMode, setRenderMode] = useState('photorealistic');
   const [selectedTool, setSelectedTool] = useState('tree');
   const [hoveredBlock, setHoveredBlock] = useState(null);
 
@@ -710,20 +639,22 @@ export function Urban3dStudio({ activeCity }) {
           </button>
         </div>
 
-        {/* Right 3D R3F Viewport Canvas */}
+        {/* Right 3D Viewport Canvas with Error Boundary Protection */}
         <div className="lg:col-span-3 h-[460px] rounded-xl overflow-hidden border border-slate-800/80 relative bg-slate-950">
-          <Canvas shadows camera={{ position: [8, 9, 10], fov: 42 }}>
-            <PhotorealisticCityScene
-              blocks={blocks}
-              timeOfDay={timeOfDay}
-              renderMode={renderMode}
-              selectedTool={selectedTool}
-              onBlockClick={handleBlockClick}
-              hoveredBlock={hoveredBlock}
-              setHoveredBlock={setHoveredBlock}
-            />
-            <OrbitControls enableZoom={true} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={20} />
-          </Canvas>
+          <Studio3dErrorBoundary>
+            <Canvas camera={{ position: [8, 9, 10], fov: 42 }}>
+              <PhotorealisticCityScene
+                blocks={blocks}
+                timeOfDay={timeOfDay}
+                renderMode={renderMode}
+                selectedTool={selectedTool}
+                onBlockClick={handleBlockClick}
+                hoveredBlock={hoveredBlock}
+                setHoveredBlock={setHoveredBlock}
+              />
+              <OrbitControls enableZoom={true} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={20} />
+            </Canvas>
+          </Studio3dErrorBoundary>
 
           {/* Mode Indicator Overlay */}
           <div className="absolute top-3 left-3 bg-slate-950/90 border border-slate-800 px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 backdrop-blur-md">
