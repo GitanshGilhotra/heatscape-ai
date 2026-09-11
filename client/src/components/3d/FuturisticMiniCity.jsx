@@ -99,13 +99,15 @@ export function FuturisticMiniCity({ greenSimulationActive = false }) {
         return (
           <group key={b.id} position={[b.x, b.height / 2, b.z]}>
             <mesh
+              castShadow
+              receiveShadow
               onPointerOver={(e) => {
                 e.stopPropagation();
                 setHoveredBlock(b);
               }}
               onPointerOut={() => setHoveredBlock(null)}
             >
-              <boxGeometry args={[0.9, b.height, 0.9]} />
+              <boxGeometry args={[0.92, b.height, 0.92]} />
               <meshStandardMaterial
                 color={isHovered ? "#ffffff" : color}
                 emissive={emissive}
@@ -115,11 +117,46 @@ export function FuturisticMiniCity({ greenSimulationActive = false }) {
               />
             </mesh>
 
-            {/* Rooftop Solar / Green Garden Cap */}
+            {/* Glass Window Grid Facade Texture Overlay */}
+            {!b.isRoad && !b.isPark && b.height > 0.6 && (
+              <mesh position={[0, 0, 0.465]}>
+                <planeGeometry args={[0.85, b.height * 0.88]} />
+                <meshStandardMaterial
+                  color="#38bdf8"
+                  emissive="#0284c7"
+                  emissiveIntensity={0.25}
+                  roughness={0.1}
+                  metalness={0.9}
+                  transparent
+                  opacity={0.85}
+                />
+              </mesh>
+            )}
+
+            {/* Real-Time 3D Green Rooftop Sedum Garden Terrace Cap */}
             {greenSimulationActive && b.isHotZone && (
-              <mesh position={[0, b.height / 2 + 0.03, 0]}>
-                <boxGeometry args={[0.92, 0.06, 0.92]} />
-                <meshStandardMaterial color="#00ff88" emissive="#00ff88" emissiveIntensity={0.8} />
+              <group position={[0, b.height / 2 + 0.04, 0]}>
+                <mesh castShadow receiveShadow>
+                  <boxGeometry args={[0.94, 0.08, 0.94]} />
+                  <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.6} roughness={0.3} />
+                </mesh>
+                {/* Mini Rooftop Trees */}
+                <mesh position={[-0.22, 0.08, -0.22]}>
+                  <sphereGeometry args={[0.1, 8, 8]} />
+                  <meshStandardMaterial color="#059669" />
+                </mesh>
+                <mesh position={[0.22, 0.08, 0.22]}>
+                  <sphereGeometry args={[0.09, 8, 8]} />
+                  <meshStandardMaterial color="#34d399" />
+                </mesh>
+              </group>
+            )}
+
+            {/* Street Tree Planting on Avenue Corridors when Cooled */}
+            {greenSimulationActive && b.isRoad && (Math.abs(b.x) % 2 === 0) && (
+              <mesh position={[0, 0.15, 0]}>
+                <sphereGeometry args={[0.12, 8, 8]} />
+                <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.4} />
               </mesh>
             )}
 

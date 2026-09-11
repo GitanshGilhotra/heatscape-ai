@@ -4,8 +4,33 @@ import { OrbitControls, Html, Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { Sun, TreePine, Flame, Sparkles, RefreshCw, ShieldCheck, Zap, Eye, Camera, Layers } from 'lucide-react';
 
+// Map locality landmark names for any world city
+function getLocalityLandmarks(cityName) {
+  const c = (cityName || 'New Delhi').toLowerCase();
+  if (c.includes('delhi')) {
+    return ["Connaught Place Hub", "Okhla Industrial Sector", "Dwarka Sector 21", "Delhi Ridge Forest", "Chandni Chowk Grid"];
+  } else if (c.includes('york') || c.includes('nyc')) {
+    return ["Midtown Skyscraper Canyon", "Brooklyn Navy Yard", "Central Park West", "Wall Street Core", "Hudson Yards Tower"];
+  } else if (c.includes('tokyo')) {
+    return ["Shinjuku Station Core", "Marunouchi Business District", "Yoyogi Park Sanctuary", "Shibuya Crossing Grid", "Ginza High-Rise Zone"];
+  } else if (c.includes('london')) {
+    return ["City of London Commercial", "Canary Wharf Financial Core", "Hyde Park Sanctuary", "Thames Corridor Grid", "Mayfair Office Hub"];
+  } else if (c.includes('paris')) {
+    return ["La Défense Commercial Core", "Champs-Élysées Boulevard", "Jardin du Luxembourg Buffer", "Montparnasse Skyscraper", "Le Marais Grid"];
+  } else if (c.includes('dubai')) {
+    return ["Burj Financial District", "Dubai Marina Skyscraper", "Business Bay Commercial", "Jumeirah Palms Sanctuary", "Al Quoz Industrial"];
+  } else if (c.includes('phoenix')) {
+    return ["Downtown Sky Harbor", "Tempe Industrial Corridor", "Papago Park Preserve", "Camelback Sector", "Scottsdale Financial"];
+  } else if (c.includes('mumbai')) {
+    return ["BKC Commercial Corridor", "Dharavi High-Density Zone", "Sanjay Gandhi Sanctuary", "Nariman Point Tower", "Worli Sea Face Grid"];
+  } else {
+    return [`${cityName} Commercial Core`, `${cityName} Industrial Corridor`, `${cityName} Urban Park Sanctuary`, `${cityName} Financial District`, `${cityName} Residential Grid`];
+  }
+}
+
 // Procedural Architectural 3D Block Generator
-function createArchitecturalBlocks() {
+function createArchitecturalBlocks(cityName = "New Delhi") {
+  const landmarks = getLocalityLandmarks(cityName);
   const blocks = [];
   const size = 6;
   let id = 1;
@@ -38,9 +63,11 @@ function createArchitecturalBlocks() {
 
       const initialLst = isPark ? 27.8 : (height > 2.0 ? 45.4 : 40.1);
       const initialNdvi = isPark ? 0.82 : 0.09;
+      const landmarkName = isPark ? landmarks[3] || "Urban Park Preserve" : landmarks[(id - 1) % landmarks.length];
 
       blocks.push({
         id: `ZONE_${id++}`,
+        landmarkName,
         x: x * 1.5,
         z: z * 1.5,
         height,
@@ -411,9 +438,8 @@ function PhotorealisticCityScene({
               <Html position={[b.x, b.height + 0.6, b.z]} center distanceFactor={7}>
                 <div className="bg-slate-950/95 border border-cyan-400/60 p-3 rounded-xl text-xs font-mono w-48 shadow-2xl backdrop-blur-xl pointer-events-none">
                   <div className="flex items-center justify-between border-b border-cyan-500/30 pb-1.5 mb-1.5">
-                    <span className="font-bold text-cyan-glow flex items-center gap-1">
-                      <span>{b.id}</span>
-                      <span className="text-[9px] text-slate-400 uppercase">({b.buildingType})</span>
+                    <span className="font-bold text-cyan-glow truncate max-w-[120px]">
+                      {b.landmarkName || b.id}
                     </span>
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                       b.currentLst >= 42 ? 'bg-red-500 text-white' : 'bg-emerald-400 text-black'

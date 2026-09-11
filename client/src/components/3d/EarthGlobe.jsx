@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Sphere, Line, Points, PointMaterial } from '@react-three/drei';
+import { Sphere, Line, Points, PointMaterial, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Megacity Hotspot Nodes mapped to 3D Sphere Coordinates across all continents
@@ -40,15 +40,94 @@ function latLngToVector3(lat, lng, radius) {
   return new THREE.Vector3(x, y, z);
 }
 
+// Generate realistic Earth texture (Oceans, Continents, Night City Lights, Polar Ice)
+function createPhotorealisticEarthTexture() {
+  const width = 1024;
+  const height = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  // Deep Ocean Base Gradient
+  const oceanGrad = ctx.createLinearGradient(0, 0, 0, height);
+  oceanGrad.addColorStop(0, "#081d38");
+  oceanGrad.addColorStop(0.5, "#0b2b52");
+  oceanGrad.addColorStop(1, "#081d38");
+  ctx.fillStyle = oceanGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Helper to draw continent landmass blobs
+  ctx.fillStyle = "#1e4d2b"; // Landmass Green/Olive
+  ctx.strokeStyle = "#2e6f3e";
+
+  const drawLand = (xPct, yPct, rX, rY) => {
+    ctx.beginPath();
+    ctx.ellipse(xPct * width, yPct * height, rX * width, rY * height, 0, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  // North America
+  drawLand(0.22, 0.32, 0.12, 0.18);
+  drawLand(0.18, 0.28, 0.08, 0.12);
+  drawLand(0.26, 0.24, 0.09, 0.10);
+
+  // South America
+  drawLand(0.32, 0.68, 0.07, 0.18);
+  drawLand(0.34, 0.62, 0.06, 0.12);
+
+  // Europe
+  drawLand(0.52, 0.26, 0.06, 0.10);
+
+  // Africa
+  drawLand(0.53, 0.54, 0.09, 0.19);
+  drawLand(0.56, 0.48, 0.08, 0.14);
+
+  // Eurasia / Asia
+  drawLand(0.68, 0.28, 0.16, 0.16);
+  drawLand(0.78, 0.35, 0.12, 0.14);
+  drawLand(0.72, 0.45, 0.08, 0.10); // India
+
+  // Australia
+  drawLand(0.85, 0.72, 0.08, 0.11);
+
+  // Antarctica & Arctic Ice Caps
+  ctx.fillStyle = "#e2e8f0";
+  ctx.fillRect(0, 0, width, height * 0.08); // North Pole
+  ctx.fillRect(0, height * 0.92, width, height * 0.08); // South Pole
+
+  // Golden Night City Lights Dots
+  ctx.fillStyle = "#fbbf24";
+  const numLights = 1400;
+  for (let i = 0; i < numLights; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    // Concentrate lights on land lat/lng ranges
+    if ((y > height * 0.18 && y < height * 0.82) && (x < width * 0.4 || x > width * 0.48)) {
+      ctx.globalAlpha = 0.3 + Math.random() * 0.7;
+      ctx.fillRect(x, y, 1.2, 1.2);
+    }
+  }
+  ctx.globalAlpha = 1.0;
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export function EarthGlobe({ onSelectCity }) {
   const earthGroupRef = useRef();
   const satelliteRef = useRef();
   const cloudSphereRef = useRef();
   const particlesRef = useRef();
+  const [hoveredCity, setHoveredCity] = React.useState(null);
+
+  // Procedural Photorealistic Earth Canvas Texture
+  const earthTexture = useMemo(() => createPhotorealisticEarthTexture(), []);
 
   // Orbital particle field
-  const particleCount = 800;
-  const particlePositions = React.useMemo(() => {
+  const particleCount = 700;
+  const particlePositions = useMemo(() => {
     const pos = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
       const u = Math.random();
@@ -63,96 +142,71 @@ export function EarthGlobe({ onSelectCity }) {
     return pos;
   }, []);
 
-  // Lat / Lng Grid lines
-  const gridLines = React.useMemo(() => {
-    const lines = [];
-    const radius = 2.01;
-    for (let lat = -60; lat <= 60; lat += 20) {
-      const pts = [];
-      for (let lng = -180; lng <= 180; lng += 10) {
-        pts.push(latLngToVector3(lat, lng, radius));
-      }
-      lines.push(pts);
-    }
-    for (let lng = -180; lng < 180; lng += 30) {
-      const pts = [];
-      for (let lat = -80; lat <= 80; lat += 10) {
-        pts.push(latLngToVector3(lat, lng, radius));
-      }
-      lines.push(pts);
-    }
-    return lines;
-  }, []);
-
   useFrame(({ clock, mouse }) => {
     const elapsedTime = clock.getElapsedTime();
 
     if (earthGroupRef.current) {
-      earthGroupRef.current.rotation.y = elapsedTime * 0.1;
-      earthGroupRef.current.rotation.x = Math.sin(elapsedTime * 0.04) * 0.06 + (mouse.y * 0.15);
-      earthGroupRef.current.rotation.z = mouse.x * 0.08;
+      earthGroupRef.current.rotation.y = elapsedTime * 0.08;
+      earthGroupRef.current.rotation.x = Math.sin(elapsedTime * 0.03) * 0.05 + (mouse.y * 0.12);
     }
 
     if (cloudSphereRef.current) {
-      cloudSphereRef.current.rotation.y = elapsedTime * 0.14;
+      cloudSphereRef.current.rotation.y = elapsedTime * 0.12;
     }
 
     if (satelliteRef.current) {
       const orbitAngle = elapsedTime * 0.35;
-      const r = 3.3;
+      const r = 3.2;
       satelliteRef.current.position.x = Math.cos(orbitAngle) * r;
       satelliteRef.current.position.z = Math.sin(orbitAngle) * r;
-      satelliteRef.current.position.y = Math.sin(orbitAngle * 1.4) * 1.2;
+      satelliteRef.current.position.y = Math.sin(orbitAngle * 1.4) * 1.1;
     }
 
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = -elapsedTime * 0.03;
+      particlesRef.current.rotation.y = -elapsedTime * 0.02;
     }
   });
 
   return (
     <group ref={earthGroupRef}>
-      {/* Central Cyberpunk Earth Core */}
+      {/* Photorealistic 3D Earth Globe with Continents & Night Lights */}
       <Sphere args={[2, 64, 64]}>
         <meshStandardMaterial
-          color="#060c19"
-          roughness={0.3}
-          metalness={0.85}
-          emissive="#002244"
-          emissiveIntensity={0.4}
+          map={earthTexture}
+          roughness={0.4}
+          metalness={0.3}
+          emissive="#041226"
+          emissiveIntensity={0.3}
         />
       </Sphere>
 
-      {/* Cloud Layer Sphere */}
-      <Sphere ref={cloudSphereRef} args={[2.03, 32, 32]}>
+      {/* Atmospheric Cloud Swirl Layer */}
+      <Sphere ref={cloudSphereRef} args={[2.035, 64, 64]}>
         <meshStandardMaterial
           color="#ffffff"
           transparent
-          opacity={0.08}
-          wireframe={true}
+          opacity={0.14}
+          wireframe={false}
+          roughness={1.0}
         />
       </Sphere>
 
-      {/* Atmospheric Rayleigh Glow Shroud */}
-      <Sphere args={[2.12, 32, 32]}>
+      {/* Atmospheric Rayleigh Blue Halo Glow Shroud */}
+      <Sphere args={[2.14, 32, 32]}>
         <meshBasicMaterial
           color="#00f3ff"
           transparent
-          opacity={0.16}
+          opacity={0.18}
           side={THREE.BackSide}
         />
       </Sphere>
 
-      {/* Lat/Long Grid Lines */}
-      {gridLines.map((pts, idx) => (
-        <Line key={idx} points={pts} color="#00f3ff" opacity={0.15} transparent lineWidth={1} />
-      ))}
-
-      {/* Megacity Nodes with 3D Volumetric Heat Pillars */}
+      {/* Megacity Hotspot Nodes with 3D Volumetric Thermal Pillars */}
       {CITY_NODES.map((city, idx) => {
         const pos = latLngToVector3(city.lat, city.lng, 2.04);
         const normal = pos.clone().normalize();
-        const pillarEnd = pos.clone().add(normal.clone().multiplyScalar(0.45));
+        const pillarEnd = pos.clone().add(normal.clone().multiplyScalar(0.48));
+        const isHovered = hoveredCity?.id === city.id;
 
         return (
           <group key={idx}>
@@ -160,18 +214,23 @@ export function EarthGlobe({ onSelectCity }) {
             <mesh
               position={pos}
               onClick={() => onSelectCity && onSelectCity(city)}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                setHoveredCity(city);
+              }}
+              onPointerOut={() => setHoveredCity(null)}
             >
-              <sphereGeometry args={[0.07, 16, 16]} />
-              <meshBasicMaterial color={city.color} />
+              <sphereGeometry args={[0.065, 16, 16]} />
+              <meshBasicMaterial color={isHovered ? "#ffffff" : city.color} />
             </mesh>
 
-            {/* 3D Volumetric Thermal Pillar Laser Line */}
+            {/* 3D Volumetric Thermal Laser Pillar */}
             <Line
               points={[pos, pillarEnd]}
               color={city.color}
-              lineWidth={2.5}
+              lineWidth={isHovered ? 4 : 2.5}
               transparent
-              opacity={0.85}
+              opacity={0.9}
             />
 
             {/* Pillar Top Glowing Orb */}
@@ -179,38 +238,47 @@ export function EarthGlobe({ onSelectCity }) {
               <sphereGeometry args={[0.035, 12, 12]} />
               <meshBasicMaterial color={city.color} />
             </mesh>
+
+            {/* Hover HTML Info Badge */}
+            {isHovered && (
+              <Html position={pillarEnd} center distanceFactor={7}>
+                <div className="bg-slate-950/95 border border-cyan-glow p-2.5 rounded-xl text-xs font-mono w-40 shadow-2xl backdrop-blur-xl pointer-events-none">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1">
+                    <span className="font-bold text-white">{city.name}</span>
+                    <span className="text-[10px] text-cyan-glow font-bold">{city.country}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-400">Baseline LST:</span>
+                    <span className="text-thermal-orange font-bold">{city.temp}</span>
+                  </div>
+                </div>
+              </Html>
+            )}
           </group>
         );
       })}
 
-      {/* Detailed Orbiting Climate Satellite */}
+      {/* Orbiting NASA Climate Satellite */}
       <group ref={satelliteRef}>
         <mesh castShadow>
           <boxGeometry args={[0.18, 0.09, 0.09]} />
-          <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.1} />
+          <meshStandardMaterial color="#f8fafc" metalness={0.95} roughness={0.1} />
         </mesh>
-        {/* Solar Panels */}
         <mesh position={[-0.22, 0, 0]}>
           <boxGeometry args={[0.24, 0.01, 0.14]} />
-          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.6} />
+          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.8} />
         </mesh>
         <mesh position={[0.22, 0, 0]}>
           <boxGeometry args={[0.24, 0.01, 0.14]} />
-          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.6} />
+          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.8} />
         </mesh>
-        {/* Antenna Dish */}
-        <mesh position={[0, 0.08, 0]} rotation={[0, 0, Math.PI / 4]}>
-          <coneGeometry args={[0.08, 0.05, 12]} />
-          <meshStandardMaterial color="#38bdf8" metalness={0.9} />
-        </mesh>
-        {/* Scanning Laser Beam */}
         <mesh position={[0, -0.65, 0]} rotation={[Math.PI, 0, 0]}>
           <coneGeometry args={[0.45, 1.3, 16, 1, true]} />
-          <meshBasicMaterial color="#00f3ff" transparent opacity={0.22} side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#00f3ff" transparent opacity={0.25} side={THREE.DoubleSide} />
         </mesh>
       </group>
 
-      {/* Floating Orbital Particle Cloud */}
+      {/* Floating Space Particle Field */}
       <Points ref={particlesRef} positions={particlePositions} stride={3} frustumCulled={false}>
         <PointMaterial
           transparent
