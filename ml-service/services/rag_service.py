@@ -75,30 +75,42 @@ def process_rag_query(query: str):
     retrieved_docs = search_vector_memory(query)
     context_str = "\n".join([f"- [{doc['topic']}]: {doc['content']}" for doc in retrieved_docs])
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    gemini_key = os.getenv("GEMINI_API_KEY", "").replace('"', '').replace("'", '').strip()
     ai_generated = False
     
     if gemini_key and gemini_key != "your_google_gemini_api_key_here":
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            prompt = f"You are HEATSCAPE AI, an expert urban climate scientist. Use this context to answer the user query concisely:\n\nCONTEXT:\n{context_str}\n\nUSER QUERY: {query}\n\nProvide response in JSON format with fields 'answer' (2 sentences max) and 'recommendation' (1 sentence)."
-            
-            req_data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
-            req = urllib.request.Request(url, data=req_data, headers={'Content-Type': 'application/json'})
-            
-            with urllib.request.urlopen(req, timeout=5) as response:
-                if response.status == 200:
-                    resp_json = json.loads(response.read().decode('utf-8'))
-                    text_out = resp_json['candidates'][0]['content']['parts'][0]['text']
-                    # Clean up JSON if codeblock markdown is returned
-                    clean_text = text_out.replace('```json', '').replace('```', '').strip()
-                    parsed = json.loads(clean_text)
-                    answer = parsed.get("answer", text_out)
-                    recommendation = parsed.get("recommendation", "Implement targeted green infrastructure.")
-                    confidence = "Live Google Gemini AI Model (Grounded with Qdrant Vector Context)"
-                    ai_generated = True
-        except Exception as e:
-            print(f"[GEMINI RAG] Live API fetch fallback triggered: {e}")
+        # Try primary gemini-1.5-flash endpoint, then gemini-pro endpoint
+        endpoints = [
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={gemini_key}"
+        ]
+        
+        for url in endpoints:
+            if ai_generated:
+                break
+            try:
+                prompt = f"You are HEATSCAPE AI, an expert urban climate scientist. Use this context to answer the user query concisely:\n\nCONTEXT:\n{context_str}\n\nUSER QUERY: {query}\n\nProvide response in JSON format with fields 'answer' (2 sentences max) and 'recommendation' (1 sentence)."
+                
+                req_data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
+                req = urllib.request.Request(url, data=req_data, headers={'Content-Type': 'application/json'})
+                
+                with urllib.request.urlopen(req, timeout=6) as response:
+                    if response.status == 200:
+                        resp_json = json.loads(response.read().decode('utf-8'))
+                        text_out = resp_json['candidates'][0]['content']['parts'][0]['text']
+                        clean_text = text_out.replace('```json', '').replace('```', '').strip()
+                        try:
+                            parsed = json.loads(clean_text)
+                            answer = parsed.get("answer", text_out)
+                            recommendation = parsed.get("recommendation", "Implement targeted green infrastructure.")
+                        except:
+                            answer = text_out
+                            recommendation = "Deploy targeted green infrastructure."
+                        confidence = "Live Google Gemini AI Model (Grounded with Qdrant Vector Context)"
+                        ai_generated = True
+            except Exception as e:
+                print(f"[GEMINI RAG] Model endpoint fetch note: {e}")
+
 
     if not ai_generated:
         query_lower = query.lower()

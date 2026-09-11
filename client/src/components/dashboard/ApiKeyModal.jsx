@@ -21,15 +21,17 @@ export function ApiKeyModal({ isOpen, onClose }) {
 
   useEffect(() => {
     // Load from env / localStorage
-    const envWeather = import.meta.env.VITE_OPENWEATHER_API_KEY || '';
-    const envGemini = import.meta.env.VITE_GEMINI_API_KEY || '';
-    const envNasa = import.meta.env.VITE_NASA_API_KEY || '';
+    const clean = (val) => (val || '').replace(/^["']|["']$/g, '').trim();
+
+    const envWeather = clean(import.meta.env.VITE_OPENWEATHER_API_KEY);
+    const envGemini = clean(import.meta.env.VITE_GEMINI_API_KEY);
+    const envNasa = clean(import.meta.env.VITE_NASA_API_KEY);
     const envApi = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const envMl = import.meta.env.VITE_ML_SERVICE_URL || 'http://localhost:8000';
 
-    const localWeather = localStorage.getItem('heatscape_key_openweather') || envWeather;
-    const localGemini = localStorage.getItem('heatscape_key_gemini') || envGemini;
-    const localNasa = localStorage.getItem('heatscape_key_nasa') || envNasa;
+    const localWeather = clean(localStorage.getItem('heatscape_key_openweather')) || envWeather;
+    const localGemini = clean(localStorage.getItem('heatscape_key_gemini')) || envGemini;
+    const localNasa = clean(localStorage.getItem('heatscape_key_nasa')) || envNasa;
 
     setKeys({
       openWeather: localWeather,
@@ -41,6 +43,7 @@ export function ApiKeyModal({ isOpen, onClose }) {
 
     checkServices(envApi, envMl, localWeather, localGemini);
   }, [isOpen]);
+
 
   const checkServices = async (api, ml, weatherKey, geminiKey) => {
     // Check Express Server
@@ -75,13 +78,19 @@ export function ApiKeyModal({ isOpen, onClose }) {
   };
 
   const handleSave = () => {
-    localStorage.setItem('heatscape_key_openweather', keys.openWeather);
-    localStorage.setItem('heatscape_key_gemini', keys.gemini);
-    localStorage.setItem('heatscape_key_nasa', keys.nasa);
+    const clean = (val) => (val || '').replace(/^["']|["']$/g, '').trim();
+    const wKey = clean(keys.openWeather);
+    const gKey = clean(keys.gemini);
+    const nKey = clean(keys.nasa);
+
+    localStorage.setItem('heatscape_key_openweather', wKey);
+    localStorage.setItem('heatscape_key_gemini', gKey);
+    localStorage.setItem('heatscape_key_nasa', nKey);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
-    checkServices(keys.apiUrl, keys.mlUrl, keys.openWeather, keys.gemini);
+    checkServices(keys.apiUrl, keys.mlUrl, wKey, gKey);
   };
+
 
   if (!isOpen) return null;
 

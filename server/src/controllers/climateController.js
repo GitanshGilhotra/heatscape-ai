@@ -170,7 +170,8 @@ const getAnalytics = (req, res) => {
 
 const getLiveWeather = async (req, res) => {
   const { cityName } = req.params;
-  const apiKey = process.env.OPENWEATHER_API_KEY || req.query.apiKey;
+  let apiKey = process.env.OPENWEATHER_API_KEY || req.query.apiKey;
+  if (apiKey) apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
 
   if (apiKey && apiKey !== 'your_openweather_api_key_here') {
     try {
@@ -215,14 +216,45 @@ const getLiveWeather = async (req, res) => {
   });
 };
 
+const getNasaData = async (req, res) => {
+  const { lat, lng } = req.query;
+  let nasaKey = process.env.NASA_API_KEY || req.query.apiKey || 'DEMO_KEY';
+  if (nasaKey) nasaKey = nasaKey.replace(/^["']|["']$/g, '').trim();
+
+  try {
+    const url = `https://api.nasa.gov/planetary/earth/assets?lon=${lng || 77.2090}&lat=${lat || 28.6139}&date=2024-01-01&dim=0.15&api_key=${nasaKey}`;
+    const response = await fetch(url);
+    if (response.ok) {
+      const data = await response.json();
+      return res.json({ success: true, live: true, data });
+    }
+  } catch (err) {
+    console.warn(`[NASA API] Satellite raster fetch fallback: ${err.message}`);
+  }
+
+  res.json({
+    success: true,
+    live: false,
+    data: {
+      date: "2026-09-11",
+      id: "LANDSAT/LC08/C01/T1_SR",
+      resource: { dataset: "NASA Thermal Infrared Sensor (TIRS)", sensor: "Landsat-8" }
+    }
+  });
+};
+
 const getSystemStatus = (req, res) => {
+  const weatherKey = (process.env.OPENWEATHER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+  const nasaKey = (process.env.NASA_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+  const geminiKey = (process.env.GEMINI_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+
   res.json({
     success: true,
     services: {
       expressServer: { status: "ONLINE", version: "1.0.0", port: process.env.PORT || 5000 },
-      openWeatherApi: { configured: !!(process.env.OPENWEATHER_API_KEY && process.env.OPENWEATHER_API_KEY !== 'your_openweather_api_key_here'), provider: "OpenWeatherMap API" },
-      nasaEarthApi: { configured: !!(process.env.NASA_API_KEY && process.env.NASA_API_KEY !== 'your_nasa_api_key_here'), provider: "NASA Earth Thermal Landsat" },
-      geminiAi: { configured: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_google_gemini_api_key_here'), provider: "Google Gemini AI Engine" },
+      openWeatherApi: { configured: !!(weatherKey && weatherKey !== 'your_openweather_api_key_here'), provider: "OpenWeatherMap API" },
+      nasaEarthApi: { configured: !!(nasaKey && nasaKey !== 'your_nasa_api_key_here'), provider: "NASA Earth Thermal Landsat" },
+      geminiAi: { configured: !!(geminiKey && geminiKey !== 'your_google_gemini_api_key_here'), provider: "Google Gemini AI Engine" },
       vectorStore: { configured: true, provider: "Qdrant Vector Database (Simulated/Local)" }
     }
   });
@@ -234,6 +266,8 @@ module.exports = {
   getInterventions,
   getAnalytics,
   getLiveWeather,
+  getNasaData,
   getSystemStatus
 };
+
 
