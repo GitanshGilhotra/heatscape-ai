@@ -430,7 +430,7 @@ function PhotorealisticCityScene({
 // Container Studio Component
 export function Urban3dStudio({ activeCity }) {
   const [currentCityObj, setCurrentCityObj] = useState(activeCity || { name: "New Delhi", center: [28.6139, 77.2090], temp: "42.8°C" });
-  const [viewportMode, setViewportMode] = useState('sim_3d'); // 'sim_3d' | 'google_3d'
+  const [viewportMode, setViewportMode] = useState('google_3d'); // Default to Real Google Satellite 3D Aerial Locality View
   const [studioSearchQuery, setStudioSearchQuery] = useState('');
   const [isSearchingStudio, setIsSearchingStudio] = useState(false);
 
@@ -588,21 +588,21 @@ export function Urban3dStudio({ activeCity }) {
           {/* Engine Mode Toggle */}
           <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 font-mono text-xs">
             <button
-              onClick={() => setViewportMode('sim_3d')}
-              className={`px-3 py-1.5 rounded-lg transition font-bold ${
-                viewportMode === 'sim_3d' ? 'bg-cyan-500/20 text-cyan-glow border border-cyan-400/50' : 'text-slate-400 hover:text-white'
+              onClick={() => setViewportMode('google_3d')}
+              className={`px-3.5 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5 ${
+                viewportMode === 'google_3d' ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/60 shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              3D SIMULATOR
+              <Globe className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>REAL SATELLITE 3D</span>
             </button>
             <button
-              onClick={() => setViewportMode('google_3d')}
-              className={`px-3 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5 ${
-                viewportMode === 'google_3d' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/50' : 'text-slate-400 hover:text-white'
+              onClick={() => setViewportMode('sim_3d')}
+              className={`px-3.5 py-1.5 rounded-lg transition font-bold ${
+                viewportMode === 'sim_3d' ? 'bg-cyan-500/25 text-cyan-glow border border-cyan-400/60 shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Globe className="w-3.5 h-3.5 text-emerald-400" />
-              <span>GOOGLE SATELLITE 3D</span>
+              3D CAD MODELER
             </button>
           </div>
         </div>
