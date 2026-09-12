@@ -98,7 +98,7 @@ export function createDynamicCityObject(cityName, lat = null, lng = null, countr
   const cleanName = cityName.trim();
   const existing = GLOBAL_CITIES_LIST.find(c => c.name.toLowerCase() === cleanName.toLowerCase());
   
-  if (existing) {
+  if (existing && lat === null) {
     const tempNum = parseFloat(existing.temp);
     return {
       ...existing,
@@ -121,9 +121,46 @@ export function createDynamicCityObject(cityName, lat = null, lng = null, countr
     name: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
     country,
     center: [finalLat, finalLng],
-    zoom: 12,
+    zoom: 14,
     temp: `${calcTemp}°C`,
     uhi: calcTemp >= 44 ? "CRITICAL" : (calcTemp >= 38 ? "HIGH" : "MODERATE"),
     zones: generateCityZones(finalLat, finalLng, cleanName, calcTemp)
   };
+}
+
+// Real-time worldwide geocoding API search for ANY locality, address, or landmark on Earth
+export async function geocodeLocality(query) {
+  if (!query || !query.trim()) return null;
+  const q = query.trim();
+
+  // First check if query matches predefined list
+  const matched = GLOBAL_CITIES_LIST.find(c => c.name.toLowerCase() === q.toLowerCase());
+  if (matched) {
+    return createDynamicCityObject(matched.name, matched.center[0], matched.center[1], matched.country);
+  }
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=1`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const item = data[0];
+        const lat = parseFloat(item.lat);
+        const lng = parseFloat(item.lon);
+        const name = item.address?.suburb || item.address?.neighbourhood || item.address?.city || item.address?.town || item.name || q;
+        const country = item.address?.country || "Global";
+        const fullAddress = item.display_name;
+
+        const obj = createDynamicCityObject(name, lat, lng, country);
+        obj.fullAddress = fullAddress;
+        obj.displayName = item.display_name;
+        obj.isRealGeocoded = true;
+        return obj;
+      }
+    }
+  } catch (err) {
+    console.warn("[GEOCODE NOTICE] Dynamic fallback used for query:", q, err);
+  }
+
+  return createDynamicCityObject(q);
 }

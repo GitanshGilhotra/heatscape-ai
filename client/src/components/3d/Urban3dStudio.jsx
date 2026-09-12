@@ -2,7 +2,8 @@ import React, { useRef, useState, useMemo, useEffect, Component } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { Sun, TreePine, Flame, Sparkles, RefreshCw, ShieldCheck, Zap, Eye, AlertTriangle } from 'lucide-react';
+import { Sun, TreePine, Flame, Sparkles, RefreshCw, ShieldCheck, Zap, Eye, AlertTriangle, Search, Globe, MapPin, Map, Loader2 } from 'lucide-react';
+import { geocodeLocality } from '../../data/globalCities';
 
 // Error Boundary for 3D Viewport Safety
 class Studio3dErrorBoundary extends Component {
@@ -402,8 +403,16 @@ function PhotorealisticCityScene({
 
 // Container Studio Component
 export function Urban3dStudio({ activeCity }) {
-  const cityName = activeCity?.name || "New Delhi";
-  const cityTemp = parseFloat(String(activeCity?.temp || '42.8').replace('°C', '').trim()) || 42.8;
+  const [currentCityObj, setCurrentCityObj] = useState(activeCity || { name: "New Delhi", center: [28.6139, 77.2090], temp: "42.8°C" });
+  const [viewportMode, setViewportMode] = useState('sim_3d'); // 'sim_3d' | 'google_3d'
+  const [studioSearchQuery, setStudioSearchQuery] = useState('');
+  const [isSearchingStudio, setIsSearchingStudio] = useState(false);
+
+  const cityName = currentCityObj?.name || "New Delhi";
+  const cityTemp = parseFloat(String(currentCityObj?.temp || '42.8').replace('°C', '').trim()) || 42.8;
+
+  const lat = currentCityObj?.center ? currentCityObj.center[0] : 28.6139;
+  const lng = currentCityObj?.center ? currentCityObj.center[1] : 77.2090;
 
   const [blocks, setBlocks] = useState(() => {
     const defaultBlocks = createArchitecturalBlocks(cityName);
@@ -416,6 +425,7 @@ export function Urban3dStudio({ activeCity }) {
 
   useEffect(() => {
     if (activeCity) {
+      setCurrentCityObj(activeCity);
       const numericTemp = parseFloat(String(activeCity.temp || '42.8').replace('°C', '').trim()) || 42.8;
       const newCityBlocks = createArchitecturalBlocks(activeCity.name);
       setBlocks(newCityBlocks.map(b => ({
@@ -425,6 +435,28 @@ export function Urban3dStudio({ activeCity }) {
       })));
     }
   }, [activeCity]);
+
+  const handleStudioSearch = async (e) => {
+    e.preventDefault();
+    if (!studioSearchQuery.trim()) return;
+    setIsSearchingStudio(true);
+    try {
+      const geocoded = await geocodeLocality(studioSearchQuery);
+      if (geocoded) {
+        setCurrentCityObj(geocoded);
+        const numericTemp = parseFloat(String(geocoded.temp || '42.8').replace('°C', '').trim()) || 42.8;
+        const newBlocks = createArchitecturalBlocks(geocoded.name);
+        setBlocks(newBlocks.map(b => ({
+          ...b,
+          currentLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2),
+          baseLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2)
+        })));
+      }
+    } finally {
+      setIsSearchingStudio(false);
+      setStudioSearchQuery('');
+    }
+  };
 
   const [timeOfDay, setTimeOfDay] = useState(13);
   const [renderMode, setRenderMode] = useState('photorealistic');
@@ -490,34 +522,58 @@ export function Urban3dStudio({ activeCity }) {
     <div className="glass-panel p-6 rounded-2xl border border-cyan-glow/30 bg-slate-950/85 shadow-2xl relative overflow-hidden space-y-6">
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-400 font-mono text-xs mb-1.5 shadow-lg shadow-cyan-glow/10">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-400 font-mono text-xs mb-1 shadow-lg shadow-cyan-glow/10">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>3D URBAN MICROCLIMATE STUDIO ({cityName.toUpperCase()})</span>
+            <span>3D LOCALITY STUDIO ({cityName.toUpperCase()})</span>
           </div>
           <h3 className="font-display font-bold text-2xl text-white tracking-tight">
-            3D ARCHITECTURAL THERMAL SIMULATION — {cityName.toUpperCase()}
+            3D ARCHITECTURAL & SATELLITE VIEWPORT — {cityName.toUpperCase()}
           </h3>
           <p className="text-slate-400 text-xs font-mono">
-            Interactive 3D viewport featuring procedural skyscrapers, glass facades, solar panels, and real-time thermal cooling calculations for {cityName}.
+            {currentCityObj.fullAddress || `Geocoded 3D Microclimate Studio centered at ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E.`}
           </p>
         </div>
 
-        {/* Live Metrics Widget */}
-        <div className="flex items-center gap-4 bg-slate-900/90 border border-slate-800 p-3 rounded-xl font-mono text-xs">
-          <div className="text-center px-2">
-            <span className="text-slate-400 text-[10px] block">AVG CITY LST</span>
-            <span className="text-lg font-bold text-thermal-orange">{stats.avgLst.toFixed(1)}°C</span>
-          </div>
-          <div className="h-8 w-px bg-slate-800" />
-          <div className="text-center px-2">
-            <span className="text-slate-400 text-[10px] block">VEGETATION (NDVI)</span>
-            <span className="text-lg font-bold text-emerald-400">{stats.avgNdvi.toFixed(2)}</span>
-          </div>
-          <div className="h-8 w-px bg-slate-800" />
-          <div className="text-center px-2">
-            <span className="text-slate-400 text-[10px] block">INFRASTRUCTURE</span>
-            <span className="text-lg font-bold text-cyan-glow">{stats.cooledCount} / 36</span>
+        {/* Locality Search & Engine Switcher */}
+        <div className="flex flex-wrap items-center gap-3">
+          <form onSubmit={handleStudioSearch} className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 font-mono text-xs">
+            <input
+              type="text"
+              value={studioSearchQuery}
+              onChange={(e) => setStudioSearchQuery(e.target.value)}
+              placeholder="Search any locality/street..."
+              className="bg-transparent text-slate-200 text-xs px-3 py-1.5 focus:outline-none w-48"
+            />
+            <button
+              type="submit"
+              disabled={isSearchingStudio}
+              className="px-3 py-1.5 bg-cyan-glow text-black font-bold rounded-lg hover:bg-cyan-400 transition flex items-center gap-1 text-xs"
+            >
+              {isSearchingStudio ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              <span>GO</span>
+            </button>
+          </form>
+
+          {/* Engine Mode Toggle */}
+          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 font-mono text-xs">
+            <button
+              onClick={() => setViewportMode('sim_3d')}
+              className={`px-3 py-1.5 rounded-lg transition font-bold ${
+                viewportMode === 'sim_3d' ? 'bg-cyan-500/20 text-cyan-glow border border-cyan-400/50' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              3D SIMULATOR
+            </button>
+            <button
+              onClick={() => setViewportMode('google_3d')}
+              className={`px-3 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5 ${
+                viewportMode === 'google_3d' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/50' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-400" />
+              <span>GOOGLE SATELLITE 3D</span>
+            </button>
           </div>
         </div>
       </div>
@@ -639,27 +695,38 @@ export function Urban3dStudio({ activeCity }) {
           </button>
         </div>
 
-        {/* Right 3D Viewport Canvas with Error Boundary Protection */}
-        <div className="lg:col-span-3 h-[460px] rounded-xl overflow-hidden border border-slate-800/80 relative bg-slate-950">
-          <Studio3dErrorBoundary>
-            <Canvas camera={{ position: [8, 9, 10], fov: 42 }}>
-              <PhotorealisticCityScene
-                blocks={blocks}
-                timeOfDay={timeOfDay}
-                renderMode={renderMode}
-                selectedTool={selectedTool}
-                onBlockClick={handleBlockClick}
-                hoveredBlock={hoveredBlock}
-                setHoveredBlock={setHoveredBlock}
-              />
-              <OrbitControls enableZoom={true} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={20} />
-            </Canvas>
-          </Studio3dErrorBoundary>
+        {/* Right 3D Viewport Canvas or Real Google Satellite View */}
+        <div className="lg:col-span-3 h-[480px] rounded-xl overflow-hidden border border-slate-800/80 relative bg-slate-950">
+          {viewportMode === 'sim_3d' ? (
+            <Studio3dErrorBoundary>
+              <Canvas camera={{ position: [8, 9, 10], fov: 42 }}>
+                <PhotorealisticCityScene
+                  blocks={blocks}
+                  timeOfDay={timeOfDay}
+                  renderMode={renderMode}
+                  selectedTool={selectedTool}
+                  onBlockClick={handleBlockClick}
+                  hoveredBlock={hoveredBlock}
+                  setHoveredBlock={setHoveredBlock}
+                />
+                <OrbitControls enableZoom={true} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={20} />
+              </Canvas>
+            </Studio3dErrorBoundary>
+          ) : (
+            <iframe
+              title={`Google Satellite 3D View for ${cityName}`}
+              src={`https://maps.google.com/maps?q=${lat},${lng}&t=k&z=17&ie=UTF8&iwloc=&output=embed`}
+              className="w-full h-full border-0 filter contrast-105 brightness-95"
+              allowFullScreen
+              loading="lazy"
+            />
+          )}
 
           {/* Mode Indicator Overlay */}
-          <div className="absolute top-3 left-3 bg-slate-950/90 border border-slate-800 px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 backdrop-blur-md">
-            <span>MODE: </span>
-            <span className="text-cyan-glow font-bold capitalize">{selectedTool.replace('_', ' ')} PLACEMENT</span>
+          <div className="absolute top-3 left-3 bg-slate-950/90 border border-slate-800 px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-300 backdrop-blur-md flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5 text-thermal-orange" />
+            <span>LOCALITY: </span>
+            <span className="text-cyan-glow font-bold">{cityName.toUpperCase()} ({lat.toFixed(3)}°, {lng.toFixed(3)}°)</span>
           </div>
 
           <div className="absolute bottom-3 right-3 bg-slate-950/90 border border-slate-800 p-2.5 rounded-lg text-[10px] font-mono backdrop-blur-md flex items-center gap-3">

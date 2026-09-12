@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Globe, Key, User, Activity, Flame, Sparkles, MapPin, X, ArrowRight } from 'lucide-react';
-import { GLOBAL_CITIES_LIST, createDynamicCityObject } from '../../data/globalCities';
+import { Search, Globe, Key, User, Activity, Flame, Sparkles, MapPin, X, ArrowRight, Loader2 } from 'lucide-react';
+import { GLOBAL_CITIES_LIST, createDynamicCityObject, geocodeLocality } from '../../data/globalCities';
 
 export function Header({
   activeCity,
@@ -12,6 +12,7 @@ export function Header({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   const matchedCities = searchQuery.trim()
     ? GLOBAL_CITIES_LIST.filter(c => 
@@ -20,17 +21,30 @@ export function Header({
       )
     : [];
 
-  const handleSearchSubmit = (queryToSearch) => {
+  const handleSearchSubmit = async (queryToSearch) => {
     const q = (queryToSearch || searchQuery).trim();
     if (!q) return;
 
-    // Check if query matches a city name
-    const found = GLOBAL_CITIES_LIST.find(c => c.name.toLowerCase() === q.toLowerCase());
-    if (found) {
-      setActiveCity(createDynamicCityObject(found.name));
-    } else if (q.length > 2 && !q.toLowerCase().startsWith('why') && !q.toLowerCase().startsWith('how') && !q.toLowerCase().startsWith('what')) {
-      // Custom dynamic city search anywhere in the world!
+    setIsSearching(true);
+
+    try {
+      // Check if query matches a predefined city name
+      const found = GLOBAL_CITIES_LIST.find(c => c.name.toLowerCase() === q.toLowerCase());
+      if (found) {
+        setActiveCity(createDynamicCityObject(found.name));
+      } else if (q.length > 2 && !q.toLowerCase().startsWith('why') && !q.toLowerCase().startsWith('how') && !q.toLowerCase().startsWith('what')) {
+        // Real-time geocoding for ANY locality / address in the world!
+        const geocodedObj = await geocodeLocality(q);
+        if (geocodedObj) {
+          setActiveCity(geocodedObj);
+        } else {
+          setActiveCity(createDynamicCityObject(q));
+        }
+      }
+    } catch (err) {
       setActiveCity(createDynamicCityObject(q));
+    } finally {
+      setIsSearching(false);
     }
 
     onSearchSubmit(q);

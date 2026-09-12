@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
-import { Layers, MapPin, Thermometer, ShieldAlert, Sparkles, Filter } from 'lucide-react';
-import { GLOBAL_CITIES_LIST, createDynamicCityObject } from '../../data/globalCities';
+import { Layers, MapPin, Thermometer, ShieldAlert, Sparkles, Filter, Search, Loader2, Globe } from 'lucide-react';
+import { GLOBAL_CITIES_LIST, createDynamicCityObject, geocodeLocality } from '../../data/globalCities';
 
 function ChangeMapView({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom);
+    if (center && center.length === 2) {
+      map.flyTo(center, zoom || 14, { duration: 1.5 });
+    }
   }, [center, zoom, map]);
   return null;
 }
@@ -18,14 +20,18 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
     }
     return createDynamicCityObject("New Delhi");
   });
-  const [mapMode, setMapMode] = useState("dark"); // "dark" | "satellite" | "osm"
+  const [mapMode, setMapMode] = useState("google_hybrid"); // "google_hybrid" | "google_terrain" | "esri_satellite" | "dark" | "osm"
   const [activeLayer, setActiveLayer] = useState("heat"); // "heat" | "ndvi"
   const [liveTelemetry, setLiveTelemetry] = useState(null);
+
+  const [localityQuery, setLocalityQuery] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Sync with global activeCity when prop changes
   useEffect(() => {
     if (activeCity) {
       const dynamicObj = createDynamicCityObject(activeCity.name, activeCity.center ? activeCity.center[0] : null, activeCity.center ? activeCity.center[1] : null, activeCity.country);
+      if (activeCity.fullAddress) dynamicObj.fullAddress = activeCity.fullAddress;
       setSelectedCity(dynamicObj);
     }
   }, [activeCity]);
@@ -58,52 +64,106 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
     }
   };
 
-  const tileUrl = mapMode === "satellite"
-    ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-    : (mapMode === "osm" 
-        ? "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        : "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}");
+  const handleLocalitySearch = async (e) => {
+    e.preventDefault();
+    if (!localityQuery.trim()) return;
+    setIsGeocoding(true);
+    try {
+      const geocoded = await geocodeLocality(localityQuery);
+      if (geocoded) {
+        setSelectedCity(geocoded);
+        if (setActiveCity) setActiveCity(geocoded);
+      }
+    } finally {
+      setIsGeocoding(false);
+      setLocalityQuery('');
+    }
+  };
+
+  // Basemap Tile URLs including Google Maps API layers & Esri Satellite
+  const getTileUrl = () => {
+    switch (mapMode) {
+      case "google_hybrid":
+        return "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
+      case "google_terrain":
+        return "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
+      case "esri_satellite":
+        return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      case "osm":
+        return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      case "dark":
+      default:
+        return "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+    }
+  };
 
 
   return (
     <div className="relative w-full h-[620px] rounded-2xl overflow-hidden glass-panel-glow border border-cyan-glow/30 shadow-2xl">
       {/* Map Control Bar Overlay */}
-      <div className="absolute top-4 left-4 z-[1000] flex flex-wrap gap-2 items-center bg-[#0d111a]/85 backdrop-blur-md p-2 rounded-xl border border-slate-700/60 shadow-lg text-xs">
-        {/* City Selector */}
+      <div className="absolute top-4 left-4 z-[1000] flex flex-wrap gap-2 items-center bg-[#0d111a]/90 backdrop-blur-md p-2 rounded-xl border border-slate-700/60 shadow-2xl text-xs font-mono">
+        {/* In-Map Locality Search Form */}
+        <form onSubmit={handleLocalitySearch} className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
+          <input
+            type="text"
+            value={localityQuery}
+            onChange={(e) => setLocalityQuery(e.target.value)}
+            placeholder="Search any locality/street worldwide..."
+            className="bg-transparent text-slate-200 text-xs px-2.5 py-1 focus:outline-none w-48 sm:w-56"
+          />
+          <button
+            type="submit"
+            disabled={isGeocoding}
+            className="px-2.5 py-1 bg-cyan-glow text-black font-bold rounded-md hover:bg-cyan-400 transition flex items-center gap-1 text-[11px]"
+          >
+            {isGeocoding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+            <span>SEARCH</span>
+          </button>
+        </form>
+
+        {/* Megacity Selector Dropdown */}
         <select
           value={selectedCity.name}
           onChange={(e) => handleCityChange(e.target.value)}
-          aria-label="Select Target City"
-          className="bg-slate-900 text-cyan-glow font-bold border border-cyan-glow/40 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-glow cursor-pointer max-w-[170px] truncate"
+          aria-label="Select Target Megacity"
+          className="bg-slate-900 text-cyan-glow font-bold border border-cyan-glow/40 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer max-w-[150px] truncate"
         >
           {GLOBAL_CITIES_LIST.map(c => (
             <option key={c.id} value={c.name}>{c.name}, {c.country}</option>
           ))}
         </select>
 
-        {/* Basemap Toggle */}
-        <button
-          onClick={() => setMapMode(mapMode === "dark" ? "satellite" : "dark")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 transition"
-        >
-          <Layers className="w-3.5 h-3.5 text-cyan-glow" />
-          <span>{mapMode === "dark" ? "Dark Vector" : "Satellite"}</span>
-        </button>
+        {/* Basemap Satellite / Google Provider Dropdown */}
+        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
+          <Layers className="w-3.5 h-3.5 text-cyan-glow ml-1.5" />
+          <select
+            value={mapMode}
+            onChange={(e) => setMapMode(e.target.value)}
+            aria-label="Select Map Tile Provider"
+            className="bg-transparent text-slate-200 text-[11px] font-bold py-1 px-1.5 focus:outline-none cursor-pointer"
+          >
+            <option value="google_hybrid" className="bg-slate-950">Google Satellite 3D</option>
+            <option value="google_terrain" className="bg-slate-950">Google Terrain 3D</option>
+            <option value="esri_satellite" className="bg-slate-950">Esri World Satellite</option>
+            <option value="dark" className="bg-slate-950">Dark Vector GIS</option>
+            <option value="osm" className="bg-slate-950">OpenStreetMap Standard</option>
+          </select>
+        </div>
 
-        {/* Overlay Filters */}
+        {/* Overlay Layer Switcher */}
         <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
           <button
             onClick={() => setActiveLayer("heat")}
-            className={`px-2.5 py-1 rounded-md transition font-medium ${
-              activeLayer === "heat" ? "bg-thermal-orange text-white" : "text-slate-400 hover:text-white"
+            className={`px-2.5 py-1 rounded-md transition font-medium text-[11px] ${
+              activeLayer === "heat" ? "bg-thermal-orange text-white font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
-            LST Thermal
+            LST Heat Map
           </button>
           <button
             onClick={() => setActiveLayer("ndvi")}
-            className={`px-2.5 py-1 rounded-md transition font-medium ${
-              activeLayer === "ndvi" ? "bg-neon-lime text-black" : "text-slate-400 hover:text-white"
+            className={`px-2.5 py-1 rounded-md transition font-medium text-[11px] ${
+              activeLayer === "ndvi" ? "bg-neon-lime text-black font-bold" : "text-slate-400 hover:text-white"
             }`}
           >
             NDVI Canopy
@@ -137,9 +197,20 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
       >
         <ChangeMapView center={selectedCity.center} zoom={selectedCity.zoom} />
         <TileLayer
-          attribution='&copy; <a href="https://www.esri.com/">Esri</a> &amp; Landsat-8 GIS'
-          url={tileUrl}
+          attribution='&copy; Landsat-8 GIS &amp; Google Maps / Esri 3D'
+          url={getTileUrl()}
         />
+
+        {/* Real Locality Address Badge Overlay */}
+        {selectedCity.fullAddress && (
+          <div className="absolute bottom-4 left-4 z-[1000] max-w-md bg-[#0d111a]/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-cyan-glow/40 text-xs font-mono flex items-center gap-2 shadow-2xl">
+            <MapPin className="w-4 h-4 text-thermal-orange shrink-0" />
+            <div className="truncate">
+              <span className="text-cyan-glow font-bold block text-[10px]">GEOCODED EXACT LOCALITY:</span>
+              <span className="text-white text-xs truncate block">{selectedCity.fullAddress}</span>
+            </div>
+          </div>
+        )}
 
         {/* GIS Hotspot Markers */}
         {selectedCity.zones.map((z) => {
