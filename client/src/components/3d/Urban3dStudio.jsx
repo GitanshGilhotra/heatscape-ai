@@ -66,17 +66,26 @@ function getLocalityLandmarks(cityName) {
   }
 }
 
-// Procedural Architectural 3D Block Generator
-function createArchitecturalBlocks(cityName = "New Delhi") {
+// Procedural Architectural 3D Block Generator tailored to exact searched/clicked locality
+function createArchitecturalBlocks(cityName = "New Delhi", lat = 28.6139, lng = 77.2090) {
   const landmarks = getLocalityLandmarks(cityName);
   const blocks = [];
   const size = 6;
   let id = 1;
 
+  const nameLower = (cityName || '').toLowerCase();
+  
+  // Locality Typology Profiles:
+  const isSkyscraperDistrict = nameLower.includes('financial') || nameLower.includes('downtown') || nameLower.includes('york') || nameLower.includes('tokyo') || nameLower.includes('dubai') || nameLower.includes('shinjuku') || nameLower.includes('bkc') || nameLower.includes('manhattan') || nameLower.includes('chicago');
+  const isWaterfrontLocality = nameLower.includes('beach') || nameLower.includes('harbour') || nameLower.includes('coast') || nameLower.includes('marina') || nameLower.includes('sea') || nameLower.includes('river') || nameLower.includes('mumbai') || nameLower.includes('sydney') || nameLower.includes('miami');
+  const isHistoricOrDense = nameLower.includes('chowk') || nameLower.includes('old') || nameLower.includes('heritage') || nameLower.includes('bazaar') || nameLower.includes('market') || nameLower.includes('dharavi') || nameLower.includes('marais') || nameLower.includes('venice');
+  const isParkOrGreen = nameLower.includes('park') || nameLower.includes('garden') || nameLower.includes('preserve') || nameLower.includes('ridge') || nameLower.includes('forest') || nameLower.includes('sanctuary');
+
   for (let x = -size / 2; x < size / 2; x++) {
     for (let z = -size / 2; z < size / 2; z++) {
+      const distFromCenter = Math.sqrt(x * x + z * z);
       const isRoad = (x % 2 === 0 || z % 2 === 0);
-      const isPark = (!isRoad && x === 1 && z === -1);
+      const isPark = (!isRoad && ((x === 1 && z === -1) || (isParkOrGreen && distFromCenter < 2.2)));
       
       let height = 0.05;
       let buildingType = "road";
@@ -85,22 +94,39 @@ function createArchitecturalBlocks(cityName = "New Delhi") {
         height = 0.1;
         buildingType = "park";
       } else if (!isRoad) {
-        const hSeed = Math.abs(x * 1.7 + z * 2.3);
-        if (hSeed > 4.5) {
-          height = 2.8 + (hSeed % 1.5);
-          buildingType = "skyscraper";
-        } else if (hSeed > 2.5) {
-          height = 1.6 + (hSeed % 1.0);
-          buildingType = "commercial";
-        } else {
-          height = 0.9 + (hSeed % 0.6);
+        // Deterministic pseudo-random seed combining grid pos and locality coordinates
+        const cellNoise = Math.abs(Math.sin((x + lat) * 12.9898 + (z + lng) * 78.233) * 43758.5453) % 1.0;
+
+        if (isSkyscraperDistrict) {
+          // High-rise commercial canyon
+          height = distFromCenter < 2.0 ? 3.5 + cellNoise * 2.5 : 1.8 + cellNoise * 1.5;
+          buildingType = height > 3.0 ? "skyscraper" : "commercial";
+        } else if (isWaterfrontLocality) {
+          // Tower frontage along waterfront axis
+          height = z === -1 ? 3.8 + cellNoise * 1.8 : 1.2 + cellNoise * 1.2;
+          buildingType = height > 2.5 ? "skyscraper" : "residential";
+        } else if (isHistoricOrDense) {
+          // Dense mid-to-low rise courtyard blocks
+          height = 0.8 + cellNoise * 0.9;
           buildingType = "residential";
+        } else {
+          // Balanced urban grid
+          if (cellNoise > 0.65) {
+            height = 2.4 + cellNoise * 1.8;
+            buildingType = "skyscraper";
+          } else if (cellNoise > 0.3) {
+            height = 1.4 + cellNoise * 1.0;
+            buildingType = "commercial";
+          } else {
+            height = 0.8 + cellNoise * 0.5;
+            buildingType = "residential";
+          }
         }
       }
 
-      const initialLst = isPark ? 27.8 : (height > 2.0 ? 45.4 : 40.1);
-      const initialNdvi = isPark ? 0.82 : 0.09;
-      const landmarkName = isPark ? landmarks[3] || "Urban Park Preserve" : landmarks[(id - 1) % landmarks.length];
+      const initialLst = isPark ? 26.5 : (buildingType === "skyscraper" ? 44.8 : 39.5);
+      const initialNdvi = isPark ? 0.84 : (buildingType === "skyscraper" ? 0.06 : 0.18);
+      const landmarkName = isPark ? `${cityName} Park Preserve` : landmarks[(id - 1) % landmarks.length];
 
       blocks.push({
         id: `ZONE_${id++}`,
@@ -415,7 +441,7 @@ export function Urban3dStudio({ activeCity }) {
   const lng = currentCityObj?.center ? currentCityObj.center[1] : 77.2090;
 
   const [blocks, setBlocks] = useState(() => {
-    const defaultBlocks = createArchitecturalBlocks(cityName);
+    const defaultBlocks = createArchitecturalBlocks(cityName, lat, lng);
     return defaultBlocks.map(b => ({
       ...b,
       currentLst: b.isPark ? Math.max(22, cityTemp - 15) : (b.height > 2.0 ? cityTemp + 3 : cityTemp - 2),
@@ -427,7 +453,9 @@ export function Urban3dStudio({ activeCity }) {
     if (activeCity) {
       setCurrentCityObj(activeCity);
       const numericTemp = parseFloat(String(activeCity.temp || '42.8').replace('°C', '').trim()) || 42.8;
-      const newCityBlocks = createArchitecturalBlocks(activeCity.name);
+      const cLat = activeCity.center ? activeCity.center[0] : 28.6139;
+      const cLng = activeCity.center ? activeCity.center[1] : 77.2090;
+      const newCityBlocks = createArchitecturalBlocks(activeCity.name, cLat, cLng);
       setBlocks(newCityBlocks.map(b => ({
         ...b,
         currentLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2),
@@ -445,7 +473,9 @@ export function Urban3dStudio({ activeCity }) {
       if (geocoded) {
         setCurrentCityObj(geocoded);
         const numericTemp = parseFloat(String(geocoded.temp || '42.8').replace('°C', '').trim()) || 42.8;
-        const newBlocks = createArchitecturalBlocks(geocoded.name);
+        const gLat = geocoded.center ? geocoded.center[0] : 28.6139;
+        const gLng = geocoded.center ? geocoded.center[1] : 77.2090;
+        const newBlocks = createArchitecturalBlocks(geocoded.name, gLat, gLng);
         setBlocks(newBlocks.map(b => ({
           ...b,
           currentLst: b.isPark ? Math.max(22, numericTemp - 15) : (b.height > 2.0 ? numericTemp + 3 : numericTemp - 2),

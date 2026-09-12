@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
-import { Layers, MapPin, Thermometer, ShieldAlert, Sparkles, Filter, Search, Loader2, Globe } from 'lucide-react';
-import { GLOBAL_CITIES_LIST, createDynamicCityObject, geocodeLocality } from '../../data/globalCities';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { Layers, MapPin, Thermometer, ShieldAlert, Sparkles, Filter, Search, Loader2, Globe, MousePointerClick } from 'lucide-react';
+import { GLOBAL_CITIES_LIST, createDynamicCityObject, geocodeLocality, reverseGeocodeLocality } from '../../data/globalCities';
 
 function ChangeMapView({ center, zoom }) {
   const map = useMap();
@@ -10,6 +10,17 @@ function ChangeMapView({ center, zoom }) {
       map.flyTo(center, zoom || 14, { duration: 1.5 });
     }
   }, [center, zoom, map]);
+  return null;
+}
+
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click(e) {
+      if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    }
+  });
   return null;
 }
 
@@ -77,6 +88,19 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
     } finally {
       setIsGeocoding(false);
       setLocalityQuery('');
+    }
+  };
+
+  const handleMapClick = async (lat, lng) => {
+    setIsGeocoding(true);
+    try {
+      const geocoded = await reverseGeocodeLocality(lat, lng);
+      if (geocoded) {
+        setSelectedCity(geocoded);
+        if (setActiveCity) setActiveCity(geocoded);
+      }
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
@@ -196,6 +220,7 @@ export function InteractiveGisMap({ activeCity, setActiveCity, onSelectZone }) {
         zoomControl={false}
       >
         <ChangeMapView center={selectedCity.center} zoom={selectedCity.zoom} />
+        <MapClickHandler onMapClick={handleMapClick} />
         <TileLayer
           attribution='&copy; Landsat-8 GIS &amp; Google Maps / Esri 3D'
           url={getTileUrl()}

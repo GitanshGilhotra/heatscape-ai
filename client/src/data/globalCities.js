@@ -164,3 +164,32 @@ export async function geocodeLocality(query) {
 
   return createDynamicCityObject(q);
 }
+
+// Reverse geocoding API to resolve ANY clicked map lat/lng to exact street/locality name & address
+export async function reverseGeocodeLocality(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const localityName = addr.suburb || addr.neighbourhood || addr.quarter || addr.residential || addr.road || addr.city_district || addr.city || addr.town || addr.village || "Selected Locality";
+        const country = addr.country || "Global";
+        const fullAddress = data.display_name;
+
+        const obj = createDynamicCityObject(localityName, lat, lng, country);
+        obj.fullAddress = fullAddress;
+        obj.displayName = data.display_name;
+        obj.isRealGeocoded = true;
+        return obj;
+      }
+    }
+  } catch (err) {
+    console.warn("[REVERSE GEOCODE NOTICE] Fallback used for lat/lng:", lat, lng, err);
+  }
+
+  const fallbackName = `Locality (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+  const fallbackObj = createDynamicCityObject(fallbackName, lat, lng, "Global");
+  fallbackObj.fullAddress = `Coordinates: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`;
+  return fallbackObj;
+}
