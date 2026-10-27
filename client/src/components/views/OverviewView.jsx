@@ -170,18 +170,34 @@ export function OverviewView({
           </div>
 
           <div
-            onClick={() => onNavigate('ai-planner')}
-            className="glass-panel p-4 rounded-xl border border-purple-500/30 hover:border-purple-400 transition cursor-pointer group bg-slate-950/70"
+            onClick={() => onNavigate('models-hub')}
+            className="glass-panel p-4 rounded-xl border border-emerald-500/30 hover:border-emerald-400 transition cursor-pointer group bg-slate-950/70"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
-                <Cpu className="w-4 h-4 text-purple-400 group-hover:scale-110 transition" />
-                <span>AI RAG CLIMATE ASSISTANT</span>
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                <Cpu className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
+                <span>MODEL TRANSPARENCY & CALCULATIONS</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition" />
             </div>
             <p className="text-slate-400 text-xs">
-              Grounded Qdrant vector memory embeddings & Google Gemini AI providing structural urban planning recommendations.
+              Scientific proof: Why each AI model exists, exact input features, governing energy balance equations, and live test benches.
+            </p>
+          </div>
+
+          <div
+            onClick={() => onNavigate('cooling-simulator')}
+            className="glass-panel p-4 rounded-xl border border-cyan-glow/30 hover:border-cyan-glow/60 transition cursor-pointer group bg-slate-950/70"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-cyan-glow font-bold text-sm">
+                <Activity className="w-4 h-4 text-cyan-glow group-hover:rotate-12 transition" />
+                <span>WHAT-IF PHYSICS COOLING SIMULATOR</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition" />
+            </div>
+            <p className="text-slate-400 text-xs">
+              Simulate tree canopy, green roofs, and cool coatings with live step-by-step arithmetic proof and spatial feasibility constraint audits.
             </p>
           </div>
 

@@ -42,6 +42,9 @@ class SimulateRequest(BaseModel):
     tree_cover_pct: float = 20.0
     green_roof_pct: float = 15.0
     reflective_surface_pct: float = 30.0
+    building_density: Optional[float] = 78.0
+    open_space: Optional[float] = 22.0
+    ambient_temp: Optional[float] = 38.0
 
 class ChatRequest(BaseModel):
     message: str
@@ -100,7 +103,10 @@ def simulate_scenario(req: SimulateRequest):
             base_lst=req.base_lst,
             tree_cover_pct=req.tree_cover_pct,
             green_roof_pct=req.green_roof_pct,
-            reflective_surface_pct=req.reflective_surface_pct
+            reflective_surface_pct=req.reflective_surface_pct,
+            building_density=req.building_density if req.building_density is not None else 78.0,
+            open_space=req.open_space if req.open_space is not None else 22.0,
+            ambient_temp=req.ambient_temp if req.ambient_temp is not None else 38.0
         )
         return {"success": True, "data": res}
     except Exception as e:

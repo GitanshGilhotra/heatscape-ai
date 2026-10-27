@@ -14,6 +14,7 @@ import { ReportGeneratorModal } from './components/dashboard/ReportGeneratorModa
 import { AuthModal } from './components/dashboard/AuthModal';
 import { ApiKeyModal } from './components/dashboard/ApiKeyModal';
 import { CustomCursor } from './components/dashboard/CustomCursor';
+import { ModelArchitectureHub } from './components/dashboard/ModelArchitectureHub';
 
 export default function App() {
   const [activeView, setActiveView] = useState('overview');
@@ -108,16 +109,27 @@ export default function App() {
             </div>
           )}
 
+          {activeView === 'models-hub' && (
+            <ModelArchitectureHub activeCity={activeCity} />
+          )}
+
           {activeView === 'prediction' && (
             <PredictionEngineSection activeCity={activeCity} />
           )}
 
           {activeView === 'green-zones' && (
-            <GreenZonePlannerSection activeCity={activeCity} />
+            <GreenZonePlannerSection
+              activeCity={activeCity}
+              onSelectIntervention={() => setActiveView('cooling-simulator')}
+              onNavigateToSimulator={() => setActiveView('cooling-simulator')}
+            />
           )}
 
           {activeView === 'cooling-simulator' && (
-            <WhatIfSimulator activeCity={activeCity} />
+            <WhatIfSimulator
+              activeCity={activeCity}
+              onNavigateToModels={() => setActiveView('models-hub')}
+            />
           )}
 
           {activeView === 'ai-planner' && (

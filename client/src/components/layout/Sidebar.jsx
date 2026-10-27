@@ -13,7 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
-  Radio
+  Radio,
+  BookOpen,
+  Compass
 } from 'lucide-react';
 
 export function Sidebar({ activeView, setActiveView, isCollapsed, setIsCollapsed }) {
@@ -24,14 +26,15 @@ export function Sidebar({ activeView, setActiveView, isCollapsed, setIsCollapsed
         { id: "overview", label: "Overview Command", icon: LayoutDashboard },
         { id: "3d-studio", label: "3D Urban Studio", icon: Sparkles, badge: "PRO 3D" },
         { id: "gis-map", label: "GIS Heat Map", icon: Flame, badge: "LIVE GIS" },
+        { id: "models-hub", label: "Model Architecture", icon: BookOpen, badge: "ALL MODELS" },
       ]
     },
     {
       group: "PREDICTION & OPTIMIZATION",
       items: [
         { id: "prediction", label: "ML Heat Predictor", icon: Cpu },
+        { id: "cooling-simulator", label: "What-If Simulator", icon: Sliders, badge: "PHYSICS" },
         { id: "green-zones", label: "Green Zone Ranker", icon: ShieldCheck },
-        { id: "cooling-simulator", label: "What-If Simulator", icon: Sliders },
       ]
     },
     {
