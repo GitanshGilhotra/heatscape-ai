@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sliders, Sparkles, Thermometer, ShieldCheck, RefreshCw, Zap } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { FuturisticMiniCity } from '../3d/FuturisticMiniCity';
+import { EarthGlobe } from '../3d/EarthGlobe';
 
 export function WhatIfSimulator({ activeCity }) {
   const [baseLst, setBaseLst] = useState(44.5);
@@ -224,16 +224,16 @@ export function WhatIfSimulator({ activeCity }) {
             </div>
           )}
 
-          {/* 3D Mini-City Real-Time Cooling View */}
+          {/* 3D Earth Globe Real-Time Microclimate Target View */}
           <div className="h-[220px] w-full rounded-2xl glass-panel border border-slate-800 overflow-hidden relative">
             <div className="absolute top-2 left-2 z-20 font-mono text-[10px] text-neon-lime bg-slate-900/80 px-2 py-0.5 rounded border border-neon-lime/30">
-              ● REAL-TIME 3D COOLED URBAN MODEL
+              ● REAL-TIME 3D TARGET GLOBE VIEW
             </div>
-            <Canvas camera={{ position: [0, 4, 6], fov: 45 }}>
+            <Canvas camera={{ position: [0, 0, 5.2], fov: 45 }}>
               <ambientLight intensity={0.7} />
               <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-              <FuturisticMiniCity greenSimulationActive={true} />
-              <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.8} />
+              <EarthGlobe activeCity={activeCity} />
+              <OrbitControls enableZoom={false} autoRotate={false} />
             </Canvas>
           </div>
 

@@ -149,7 +149,7 @@ export function OverviewView({
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition" />
             </div>
             <p className="text-slate-400 text-xs">
-              Procedural glass skyscrapers, window grids, solar roof arrays, tree planting, and thermal infrared camera mode.
+              Real-world 3D Satellite Locality View, Google Aerial 3D Photorealistic Maps, urban microclimate greening, and thermal camera mode.
             </p>
           </div>
 

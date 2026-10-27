@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { EarthGlobe } from '../3d/EarthGlobe';
-import { FuturisticMiniCity } from '../3d/FuturisticMiniCity';
 import { Flame, Shield, ArrowRight, Activity, Terminal, Radio, Sparkles, Globe, Sun, Zap } from 'lucide-react';
 
 export function HeroSection({ onExploreMap, onAskAi }) {
@@ -139,11 +138,7 @@ export function HeroSection({ onExploreMap, onAskAi }) {
               <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
               <pointLight position={[-10, -10, -10]} intensity={0.8} color="#00f3ff" />
               
-              {viewMode === "earth" ? (
-                <EarthGlobe onSelectCity={(c) => setSelectedCityInfo({ name: c.name, temp: c.temp, color: c.color })} />
-              ) : (
-                <FuturisticMiniCity greenSimulationActive={false} />
-              )}
+              <EarthGlobe onSelectCity={(c) => setSelectedCityInfo({ name: c.name, temp: c.temp, color: c.color })} />
               
               <OrbitControls enableZoom={false} autoRotate={false} />
             </Canvas>
